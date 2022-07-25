@@ -2,4 +2,4 @@
 .idea/
 
 # Exclude the images in the data folder
-
+data/
