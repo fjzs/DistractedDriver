@@ -1,2 +1,6 @@
 # PyCharm
 .idea/
+
+# Exclude the images in the data folder
+data/*
+!data/.gitkeep
