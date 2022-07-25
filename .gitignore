@@ -3,3 +3,8 @@
 
 # Exclude the images in the data folder
 data/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class

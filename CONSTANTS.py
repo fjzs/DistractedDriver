@@ -9,3 +9,6 @@ CLASSES = ["Safe driving",
            "Hair and/or makeup",
            "Talking to passenger"
            ]
+NUM_CLASSES = len(CLASSES)
+
+DIR_TRAIN_IMAGES = "data/train"
