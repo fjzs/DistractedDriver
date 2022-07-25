@@ -3,4 +3,14 @@
 
 # Exclude the images in the data folder
 data/*
-!data/.gitkeep
+!data/test/.gitkeep
+!data/train/c0/.gitkeep
+!data/train/c1/.gitkeep
+!data/train/c2/.gitkeep
+!data/train/c3/.gitkeep
+!data/train/c4/.gitkeep
+!data/train/c5/.gitkeep
+!data/train/c6/.gitkeep
+!data/train/c7/.gitkeep
+!data/train/c8/.gitkeep
+!data/train/c9/.gitkeep
