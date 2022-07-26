@@ -1,10 +1,15 @@
+import CONSTANTS
 import pandas as pd
 import os
 import numpy as np
 from keras_preprocessing.image import ImageDataGenerator
 # How to: https://vijayabhaskar96.medium.com/tutorial-on-keras-imagedatagenerator-with-flow-from-dataframe-8bd5776e45c1
 
-def load(dataset_path:str, config:dict):
+def load(config:dict):
+
+    # Useful parameters from config
+    dataset_path = os.path.join(CONSTANTS.DIR_DATA,config["dataset"])
+
     # Load the .csv dataframe
     if not os.path.exists(dataset_path):
         raise FileNotFoundError(f"{dataset_path} not found")
@@ -16,6 +21,8 @@ def load(dataset_path:str, config:dict):
 
     # Create the generators
     train_gen = create_generator(df.loc[df['split'] == "train"], "train")
+    val_gen = create_generator(df.loc[df['val'] == "val"], "val")
+    return train_gen, val_gen
 
 
 def create_generator(df: pd.DataFrame, split:str, config:dict):

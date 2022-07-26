@@ -1,8 +1,9 @@
 # PyCharm
 .idea/
 
-# Exclude the images in the data folder
+# Exclude these folders
 data/
+models/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

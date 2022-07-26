@@ -3,6 +3,7 @@ import pandas as pd
 import util
 import CONSTANTS
 
+
 def generate_from_original_labels(dev_fraction: float, directory: str = CONSTANTS.DIR_IMAGES_ORIGINAL_LABEL):
     # Train subfolders are the initial classes: c0, c1, ..., c9
     # Classes are 0, 1, ..., 9
