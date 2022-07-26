@@ -10,7 +10,7 @@ def generate_from_original_labels(dev_fraction: float, directory: str = CONSTANT
     subfolders = [str(f.path).split("\\")[-1] for f in os.scandir(directory) if f.is_dir()]
 
     # The dataframe that will store the dataset
-    df = pd.DataFrame(columns=["file", "class", "split"])
+    df = pd.DataFrame(columns=["filepath", "class", "split"])
 
     # Append the classes file
     for subfolder in subfolders:
@@ -18,15 +18,24 @@ def generate_from_original_labels(dev_fraction: float, directory: str = CONSTANT
         files = [os.path.join(subdir,f) for f in os.listdir(subdir) if f.endswith("jpg")]
         random_split = generate_random_train_dev_list(len(files), dev_fraction)
         classes = [int(subfolder[1:])]*len(files)
-        mini_df = pd.DataFrame({"file": files, "class": classes, "split": random_split})
-        df = df.append(mini_df)
+        mini_df = pd.DataFrame({"filepath": files, "class": classes, "split": random_split})
+        df = pd.concat([df, mini_df], ignore_index=True)
 
     # Export the final df as a .csv file
-    df.to_csv(os.path.join(CONSTANTS.DIR_DATA, "datasetv00.csv"))
+    export_to_csv(df, "datasetv00")
 
 
+def sample_from_created(dataset_path:str, fraction:float, filename: str):
+    if not os.path.exists(dataset_path):
+        raise FileNotFoundError(f"{dataset_path} not found")
+
+    df = pd.read_csv(dataset_path)
+    df = df.sample(frac=fraction)
+    export_to_csv(df, filename)
 
 
+def export_to_csv(df: pd.DataFrame, filename: str):
+    df.to_csv(os.path.join(CONSTANTS.DIR_DATA, filename+".csv"), index=False)
 
 
 def generate_random_train_dev_list(size:int, dev_fraction: float) -> list:
