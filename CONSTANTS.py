@@ -13,4 +13,4 @@ NUM_CLASSES = len(CLASSES)
 
 DIR_IMAGES_ORIGINAL_LABEL = "data\\images_original_label"
 DIR_DATA = "data"
-DIR_MODELS = "models"
+DIR_EXPERIMENTS = "experiments"

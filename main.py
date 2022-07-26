@@ -15,6 +15,7 @@ if __name__ == "__main__":
         "target_size": (256, 256),
         "batch_size": 16
     }
+    print(f"Starting experiment with configuration:{config}")
     train.train_experiment(config)
 
 

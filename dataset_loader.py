@@ -3,6 +3,8 @@ import pandas as pd
 import os
 import numpy as np
 from keras_preprocessing.image import ImageDataGenerator
+import matplotlib.pyplot as plt
+
 # How to: https://vijayabhaskar96.medium.com/tutorial-on-keras-imagedatagenerator-with-flow-from-dataframe-8bd5776e45c1
 
 def load(config:dict):
@@ -22,6 +24,14 @@ def load(config:dict):
     # Create the generators
     train_gen = create_generator(df.loc[df['split'] == "train"], "train")
     val_gen = create_generator(df.loc[df['val'] == "val"], "val")
+
+    # Show some images
+    for i, x in enumerate(train_gen):
+        if i == 20:
+            break
+
+
+
     return train_gen, val_gen
 
 
