@@ -11,6 +11,7 @@ CLASSES = ["Safe driving",
            ]
 NUM_CLASSES = len(CLASSES)
 
-DIR_IMAGES_ORIGINAL_LABEL = "data/train"
+DIR_ORIGINAL_TRAINVAL = "C:\\Users\\Acer\\Documents\\Datasets\\distracted-driver-detection\\train"
+DIR_ORIGINAL_TEST = "C:\\Users\\Acer\\Documents\\Datasets\\distracted-driver-detection\\train"
 DIR_DATA = "data"
 DIR_EXPERIMENTS = "experiments"

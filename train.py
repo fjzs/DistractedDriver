@@ -9,8 +9,7 @@ def train_experiment(config: dict):
 
     print(f"Starting experiment with configuration:{config}")
     model_name = config["model_name"]
-    dataset = config["dataset"].split(".")[0]  # taking out the extension
-    experiment_name = model_name + "_" + dataset
+    experiment_name = model_name
 
     # Create the directory of the experiment
     folder_path = os.path.join(CONSTANTS.DIR_EXPERIMENTS, experiment_name)
