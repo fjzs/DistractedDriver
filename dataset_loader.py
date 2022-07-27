@@ -4,7 +4,6 @@ import os
 import numpy as np
 from keras_preprocessing.image import ImageDataGenerator
 import matplotlib.pyplot as plt
-
 # How to: https://vijayabhaskar96.medium.com/tutorial-on-keras-imagedatagenerator-with-flow-from-dataframe-8bd5776e45c1
 
 def load(config:dict):
@@ -22,8 +21,10 @@ def load(config:dict):
     display_basic_info(df)
 
     # Create the generators
-    train_gen = create_generator(df.loc[df['split'] == "train"], "train")
-    val_gen = create_generator(df.loc[df['val'] == "val"], "val")
+    df_train = df.loc[df['split'] == "train"]
+    train_gen = create_generator(df_train, "train", config)
+    df_val = df.loc[df['split'] == "val"]
+    val_gen = create_generator(df.loc[df['val'] == "val"], "val", config)
 
     # Show some images
     for i, x in enumerate(train_gen):
@@ -40,7 +41,7 @@ def create_generator(df: pd.DataFrame, split:str, config:dict):
     generator = datagen.flow_from_dataframe(
         dataframe=df,
         directory=None,
-        xcol="filepath",
+        xcol="filename",  # this has to be the absolute path if directory=None
         ycol="class",
         weight_col=None,
         target_size=config["target_size"],

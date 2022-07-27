@@ -7,6 +7,7 @@ import os
 
 def train_experiment(config: dict):
 
+    print(f"Starting experiment with configuration:{config}")
     model_name = config["model_name"]
     dataset = config["dataset"].split(".")[0]  # taking out the extension
     experiment_name = model_name + "_" + dataset
@@ -15,6 +16,10 @@ def train_experiment(config: dict):
     folder_path = os.path.join(CONSTANTS.DIR_EXPERIMENTS, experiment_name)
     if not os.path.exists(folder_path):
         os.mkdir(folder_path)
+
+    # Save the config file
+    with open(os.path.join(folder_path, "config.txt"),"w") as file:
+        file.write(str(config))
 
     # Assemble the train and load generators
     train_gen, val_gen = dataset_loader.load(config)

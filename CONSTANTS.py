@@ -11,6 +11,6 @@ CLASSES = ["Safe driving",
            ]
 NUM_CLASSES = len(CLASSES)
 
-DIR_IMAGES_ORIGINAL_LABEL = "data\\images_original_label"
+DIR_IMAGES_ORIGINAL_LABEL = "data/train"
 DIR_DATA = "data"
 DIR_EXPERIMENTS = "experiments"
