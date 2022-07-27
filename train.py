@@ -26,6 +26,9 @@ def train_experiment(config: dict):
     # This will automatically log model performance to this file
     csv_logger = CSVLogger(os.path.join(folder_path, 'logs.log'))
 
+    # Save after training
+    #model.save(os.path.join(folder_path, "model.h5"))
+
 
 
 

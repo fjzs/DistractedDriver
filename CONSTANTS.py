@@ -1,14 +1,14 @@
-CLASSES = ["Safe driving",
-           "Texting right hand",
-           "Talking on the phone right hand",
-           "Texting left hand",
-           "Talking on the phone left hand",
-           "Operating the radio",
-           "Drinking",
-           "Reaching behind",
-           "Hair and/or makeup",
-           "Talking to passenger"
-           ]
+CLASSES = {0:"Safe driving",
+           1:"Texting right hand",
+           2:"Talking on the phone right hand",
+           3:"Texting left hand",
+           4:"Talking on the phone left hand",
+           5:"Operating the radio",
+           6:"Drinking",
+           7:"Reaching behind",
+           8:"Hair and/or makeup",
+           9:"Talking to passenger"
+           }
 NUM_CLASSES = len(CLASSES)
 
 DIR_ORIGINAL_TRAINVAL = "C:\\Users\\Acer\\Documents\\Datasets\\distracted-driver-detection\\train"
