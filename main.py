@@ -14,7 +14,8 @@ if __name__ == "__main__":
         "is_new_experiment": False,
         "image_size": (256, 256),
         "batch_size": 60,
-        "epochs": 50
+        "epochs": 50,
+        "shuffle_dataset": True
     }
     train.train_experiment(config)
 

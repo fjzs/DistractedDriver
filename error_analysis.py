@@ -76,5 +76,5 @@ if __name__ == "__main__":
         "batch_size": 60
     }
     model = keras.models.load_model("experiments\\test1_data_001\\best.hdf5")
-    val_dataset = load_dataset_split("val", "data\\data_001\\val", config)
+    val_dataset = load_dataset_split("val", "data\\data_001\\val", config, shuffle=False)
     evaluate_model(model, val_dataset)

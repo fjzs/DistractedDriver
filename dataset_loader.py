@@ -19,12 +19,13 @@ def load(config:dict) -> (tf.data.Dataset, tf.data.Dataset):
     return train_dataset, val_dataset
 
 
-def load_dataset_split(split:str, directory:str, config:dict) -> tf.data.Dataset:
+def load_dataset_split(split:str, directory:str, config:dict, shuffle=True) -> tf.data.Dataset:
     """
     loads a specific split of the data from a given directory
     :param split: "train" or "val"
     :param directory: dir of the split
     :param config: a dict that must have at least the "batch_size" and "image_size" key
+    :param shuffle: True to make the dataset shuffle'd, False to make it deterministic
     :return: tf.data.Dataset
     """
 
@@ -37,7 +38,7 @@ def load_dataset_split(split:str, directory:str, config:dict) -> tf.data.Dataset
         color_mode="rgb",
         batch_size=config["batch_size"],
         image_size=config["image_size"],
-        shuffle=False,
+        shuffle=shuffle,
         seed=1989
     )
     return dataset
