@@ -1,8 +1,6 @@
 import keras.models
-
 import util
 from CONSTANTS import DIR_EXPERIMENTS, NUM_CLASSES
-import tensorflow as tf
 import dataset_loader
 from tensorflow.keras.callbacks import CSVLogger, ModelCheckpoint
 from keras.applications import EfficientNetB2
