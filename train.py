@@ -5,31 +5,28 @@ import dataset_loader
 from tensorflow.keras.callbacks import CSVLogger, ModelCheckpoint
 from keras.applications import EfficientNetB2
 from keras import models, layers, optimizers
-from util import plot_and_save_logs
 import os
 
 
 def train_experiment(config: dict) -> None:
 
     print(f"Starting experiment with configuration:{config}")
-    experiment_name = config["model_name"] + "_" + config["dataset"]
     is_new_experiment = config["is_new_experiment"]
-
-    # Create the directory of the experiment if not existant
-    folder_path = os.path.join(DIR_EXPERIMENTS, experiment_name)
-    if not os.path.exists(folder_path):
-        os.mkdir(folder_path)
+    experiment_dir = util.config_get_experiment_dir(config)
+    if not os.path.exists(experiment_dir):
+        os.mkdir(experiment_dir)
 
     # Save the config file
-    with open(os.path.join(folder_path, "config.txt"),"w") as file:
+    with open(os.path.join(experiment_dir, "config.txt"),"w") as file:
         file.write(str(config))
 
-    # Assemble the train and load generators
-    train_dataset, val_dataset = dataset_loader.load(config)
+    # Assemble the train and val dataset
+    train_dataset = dataset_loader.load_dataset_split("train", config, True)
+    val_dataset = dataset_loader.load_dataset_split("val", config, True)
 
     # Callbacks
-    csv_logger = get_callback_CSVLogger(folder_path)
-    model_checkpoint = get_callback_ModelCheckpoint(folder_path)
+    csv_logger = get_callback_CSVLogger(experiment_dir)
+    model_checkpoint = get_callback_ModelCheckpoint(experiment_dir)
 
     # Define the model or load it if its necessary
     model = None
@@ -39,12 +36,12 @@ def train_experiment(config: dict) -> None:
                   optimizer=optimizers.Adam(learning_rate=0.0001),
                   metrics=["accuracy"])
     else:
-        model = keras.models.load_model(os.path.join(folder_path,"best.hdf5"))
+        model = keras.models.load_model(os.path.join(experiment_dir,"best.hdf5"))
 
     # Cache the logs if this is a re-training
     df_previous = None
     if not is_new_experiment:
-        df_previous = util.load_csv_logs(folder_path)
+        df_previous = util.load_csv_logs(experiment_dir)
 
     # Train the model now
     model.fit(
@@ -56,10 +53,10 @@ def train_experiment(config: dict) -> None:
     )
 
     # Update the previous logs
-    util.update_csv_logs(df_previous, folder_path)
+    util.update_csv_logs(df_previous, experiment_dir)
 
     # Generate the plots of the logs
-    plot_and_save_logs(folder_path)
+    util.plot_and_save_logs(experiment_dir)
 
 
 def get_callback_CSVLogger(folder_path: str) -> CSVLogger:

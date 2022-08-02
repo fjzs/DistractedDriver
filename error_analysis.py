@@ -6,19 +6,21 @@ import os
 from sklearn.metrics import classification_report
 from tabulate import tabulate
 import tensorflow as tf
+import util
 
 
-def evaluate_model(model: keras.Model, dataset_dir: str, split:str, exp_folder_path: str, image_size=(256,256)) -> None:
+def evaluate_and_report(config: dict) -> None:
     """
-    Evaluates the model performance and creates a report for error analysis
-    :param model: a keras.Model instance
-    :param dataset_dir: the dataset directory being tested
+    Evaluates a model performance in the val split of a dataset and creates 2 reports: one at a class-level and
+    the other at an aggregate level
+    :param config: the configuration file of the experiment, specifies the necessary details to proceed
     :return:
     """
 
-    # Assemble the dataset
-    config = {"batch_size":32, "image_size":image_size}
-    dataset = load_dataset_split(split, dataset_dir, config, shuffle=False)
+    # Get the model and dataset
+    experiment_folder = util.config_get_experiment_dir(config)
+    model = keras.models.load_model(os.path.join(experiment_folder,"best.hdf5"))
+    dataset = load_dataset_split("val", config, shuffle=False)
 
     # ground_truth shape: (m,)
     # pred_val has shape (m,)
@@ -28,14 +30,16 @@ def evaluate_model(model: keras.Model, dataset_dir: str, split:str, exp_folder_p
     # Generate and print aggregated performance across classes
     target_names = CLASSES.values()
     clf_report = classification_report(ground_truth, predictions, target_names=target_names)
-    with open(os.path.join(exp_folder_path, "classification_report.txt"), "w") as file:
+    with open(os.path.join(experiment_folder, "classification_report.txt"), "w") as file:
         file.write(str(clf_report))
+    print(f"classification report created")
 
     # Compute most frequent mistakes per-class
-    mistakes = create_mistakes_frequencies(ground_truth, predictions, exp_folder_path)
+    mistakes = create_mistakes_frequencies(ground_truth, predictions)
 
     # Print mistakes report as a .txt and with image examples
-    print_mistakes_report_with_table(mistakes, exp_folder_path)
+    print_mistakes_report_with_table(mistakes, experiment_folder)
+    print(f"most frequent mistakes report created")
 
 
 def print_mistakes_report_with_table(mistakes: list, exp_folder_path: str, topK: int = 10) -> None:
@@ -60,8 +64,7 @@ def print_mistakes_report_with_table(mistakes: list, exp_folder_path: str, topK:
         file.write(str(report))
 
 
-
-def create_mistakes_frequencies(ground_truth: np.ndarray, predictions: np.ndarray, exp_folder_path: str) -> list:
+def create_mistakes_frequencies(ground_truth: np.ndarray, predictions: np.ndarray) -> list:
 
     # Both gt and pred must be the same shape
     assert ground_truth.shape == predictions.shape, "ground truth and predictions must have similar shape"

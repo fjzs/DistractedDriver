@@ -1,6 +1,10 @@
 import dataset_generator
+from CONSTANTS import DIR_DATA, DIR_EXPERIMENTS
+from error_analysis import evaluate_and_report
+import os
 import train
-import CONSTANTS
+
+
 
 
 if __name__ == "__main__":
@@ -13,11 +17,13 @@ if __name__ == "__main__":
         "dataset": "data_001",
         "is_new_experiment": False,
         "image_size": (256, 256),
-        "batch_size": 60,
-        "epochs": 50,
+        "batch_size": 64,
+        "epochs": 100,
         "shuffle_dataset": True
     }
     train.train_experiment(config)
+    evaluate_and_report(config)
+
 
 
 

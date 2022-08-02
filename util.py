@@ -45,6 +45,17 @@ def visualize_dataset(dataset: tf.data.Dataset) -> None:
     plt.show()
 
 
+def config_get_experiment_dir(config: dict) -> str:
+    experiment_name = config["model_name"] + "_" + config["dataset"]
+    experiment_dir = os.path.join(CONSTANTS.DIR_EXPERIMENTS, experiment_name)
+    return experiment_dir
+
+
+def config_get_dataset_dir(config: dict) -> str:
+    dataset_dir = os.path.join(CONSTANTS.DIR_DATA, config["dataset"])
+    return dataset_dir
+
+
 def plot_and_save_logs(folder_path: str) -> None:
     """
     Plots the logs from the training history and saves them in a png file
