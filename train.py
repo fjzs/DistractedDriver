@@ -80,6 +80,7 @@ def create_model(config: dict) -> models.Model:
     input_shape = (config["image_size"][0], config["image_size"][1], 3)
 
     # Create the base model
+    # Note that EfficientNetB2 already includes a preprocessing layer, it receives raw images
     base_model = EfficientNetB2(
         weights='imagenet',  # Load weights pre-trained on ImageNet.
         include_top=False,  # Do not include the ImageNet classifier at the top.
@@ -87,6 +88,7 @@ def create_model(config: dict) -> models.Model:
         input_shape=input_shape
     )
     base_model.trainable = False
+    print(base_model.summary())
 
     # Design the model now
     model = models.Sequential()

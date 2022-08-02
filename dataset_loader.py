@@ -19,7 +19,6 @@ def load_dataset_split(split:str, config:dict, shuffle: bool) -> tf.data.Dataset
 
     dataset_dir = util.config_get_dataset_dir(config)
     dataset_dir_split = os.path.join(dataset_dir, split)
-
     dataset = image_dataset_from_directory(
         directory=dataset_dir_split,
         labels="inferred",  # labels are generated from the directory structure
@@ -30,5 +29,8 @@ def load_dataset_split(split:str, config:dict, shuffle: bool) -> tf.data.Dataset
         shuffle=shuffle,
         seed=1989
     )
+    dataset.prefetch(tf.data.AUTOTUNE)
+
+
     return dataset
 

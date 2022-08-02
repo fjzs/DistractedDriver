@@ -13,16 +13,18 @@ if __name__ == "__main__":
 
     # To train a model with a specific dataset
     config = {
-        "model_name": "test1",
-        "dataset": "data_001",
-        "is_new_experiment": False,
-        "image_size": (256, 256),
-        "batch_size": 64,
-        "epochs": 100,
+        "model_name": "test02_noAug",
+        "dataset": "data_100",
+        "is_new_experiment": True,
+        "image_size": (640, 480),
+        "batch_size": 8,
+        "epochs": 5,
         "shuffle_dataset": True
     }
-    train.train_experiment(config)
-    evaluate_and_report(config)
+    #train.train_experiment(config)
+
+    #print("\nEvaluating experiment...")
+    #evaluate_and_report(config)
 
 
 
