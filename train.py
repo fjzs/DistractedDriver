@@ -1,11 +1,12 @@
-import keras.models
-import util
+import data_augmenter
 from CONSTANTS import DIR_EXPERIMENTS, NUM_CLASSES
+from data_augmenter import add_augmentations
 import dataset_loader
-from tensorflow.keras.callbacks import CSVLogger, ModelCheckpoint
 from keras.applications import EfficientNetB2
 from keras import models, layers, optimizers
+from tensorflow.keras.callbacks import CSVLogger, ModelCheckpoint
 import os
+import util
 
 
 def train_experiment(config: dict) -> None:
@@ -22,6 +23,10 @@ def train_experiment(config: dict) -> None:
 
     # Assemble the train and val dataset
     train_dataset = dataset_loader.load_dataset_split("train", config, True)
+    img_width, img_height = config["image_size"]
+    data_augmenter.unit_test_map(train_dataset)
+    #train_dataset = add_augmentations(train_dataset, img_height=img_height, img_width=img_width)
+    util.visualize_dataset(train_dataset)
     val_dataset = dataset_loader.load_dataset_split("val", config, True)
 
     # Callbacks

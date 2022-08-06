@@ -1,11 +1,11 @@
-import shutil
-import os
-import numpy as np
-import random
-import matplotlib.pyplot as plt
-import pandas as pd
-import tensorflow as tf
+import albumentations as A
 import CONSTANTS
+import matplotlib.pyplot as plt
+import numpy as np
+import os
+import pandas as pd
+import random
+import tensorflow as tf
 
 
 def fix_random_seed(seed):
@@ -34,14 +34,15 @@ def update_csv_logs(df_initial: pd.DataFrame, folder_path: str) -> None:
 
 
 def visualize_dataset(dataset: tf.data.Dataset) -> None:
-    # Show some images
-    plt.figure(figsize=(16, 16))
-    for images, labels in dataset.take(1):
-        for i in range(16):
-            ax = plt.subplot(4, 4, i + 1)
-            plt.imshow(images[i].numpy().astype("uint8"))
-            plt.title(CONSTANTS.CLASSES[int(labels[i])])
-            plt.axis("off")
+    images, labels = next(iter(dataset))  # extract 1 batch from the dataset
+    images = images.numpy()
+    labels = labels.numpy()
+    amount = min(10, len(labels))
+    plt.figure(figsize=(25,7))
+    for i in range(amount):
+        ax = plt.subplot(2, 5, i + 1)
+        plt.imshow(images[i].astype("uint8"))
+        plt.title(f"idx={labels[i]}: {CONSTANTS.CLASSES[int(labels[i])]}")
     plt.show()
 
 

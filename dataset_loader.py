@@ -29,7 +29,7 @@ def load_dataset_split(split:str, config:dict, shuffle: bool) -> tf.data.Dataset
         shuffle=shuffle,
         seed=1989
     )
-    dataset.prefetch(tf.data.AUTOTUNE)
+    #dataset.prefetch(tf.data.AUTOTUNE) TODO add back up
 
 
     return dataset
