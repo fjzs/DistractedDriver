@@ -1,6 +1,6 @@
 import data_augmenter
 from CONSTANTS import DIR_EXPERIMENTS, NUM_CLASSES
-from data_augmenter import add_augmentations
+from data_augmenter import add_augmentations_2
 import dataset_loader
 from keras.applications import EfficientNetB2
 from keras import models, layers, optimizers
@@ -9,25 +9,25 @@ import os
 import util
 
 
-def train_experiment(config: dict) -> None:
+def train_experiment(config_train: dict, config_augmentation: dict) -> None:
 
-    print(f"Starting experiment with configuration:{config}")
-    is_new_experiment = config["is_new_experiment"]
-    experiment_dir = util.config_get_experiment_dir(config)
+    print(f"Starting experiment with configuration:{config_train}")
+    is_new_experiment = config_train["is_new_experiment"]
+    experiment_dir = util.config_get_experiment_dir(config_train)
     if not os.path.exists(experiment_dir):
         os.mkdir(experiment_dir)
 
     # Save the config file
-    with open(os.path.join(experiment_dir, "config.txt"),"w") as file:
-        file.write(str(config))
+    with open(os.path.join(experiment_dir, "config_train.txt"),"w") as file:
+        file.write(str(config_train))
 
     # Assemble the train and val dataset
-    train_dataset = dataset_loader.load_dataset_split("train", config, True)
-    img_width, img_height = config["image_size"]
-    data_augmenter.unit_test_map(train_dataset)
-    #train_dataset = add_augmentations(train_dataset, img_height=img_height, img_width=img_width)
+    train_dataset = dataset_loader.load_dataset_split("train", config_train, True)
+    img_width, img_height = config_train["image_size"]
+    #data_augmenter.unit_test_map(train_dataset)
+    train_dataset = add_augmentations_2(train_dataset, config_augmentation)
     util.visualize_dataset(train_dataset)
-    val_dataset = dataset_loader.load_dataset_split("val", config, True)
+    val_dataset = dataset_loader.load_dataset_split("val", config_train, True)
 
     # Callbacks
     csv_logger = get_callback_CSVLogger(experiment_dir)
@@ -36,7 +36,7 @@ def train_experiment(config: dict) -> None:
     # Define the model or load it if its necessary
     model = None
     if is_new_experiment:
-        model = create_model(config)
+        model = create_model(config_train)
         model.compile(loss="sparse_categorical_crossentropy",
                   optimizer=optimizers.Adam(learning_rate=0.0001),
                   metrics=["accuracy"])
@@ -51,7 +51,7 @@ def train_experiment(config: dict) -> None:
     # Train the model now
     model.fit(
         x=train_dataset,
-        epochs=config["epochs"],
+        epochs=config_train["epochs"],
         verbose=1,
         callbacks=[csv_logger, model_checkpoint],
         validation_data=val_dataset

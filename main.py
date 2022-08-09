@@ -8,7 +8,7 @@ if __name__ == "__main__":
     #dataset_generator.generate_from_original_labels(total_fraction=0.10, val_fraction=0.3)
 
     # To train a model with a specific dataset
-    config = {
+    config_train = {
         "model_name": "test_aug",
         "dataset": "data_test",
         "is_new_experiment": True,
@@ -16,7 +16,11 @@ if __name__ == "__main__":
         "batch_size": 9,
         "epochs": 5
     }
-    train.train_experiment(config)
+    config_augmentation = {
+        "RandomCrop": {"height":280, "width": 440, "p":1},
+        "Resize": {"height":480, "width": 640}
+    }
+    train.train_experiment(config_train, config_augmentation)
 
     #print("\nEvaluating experiment...")
     #evaluate_and_report(config)
