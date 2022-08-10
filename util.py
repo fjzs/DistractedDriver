@@ -1,4 +1,3 @@
-import albumentations as A
 import CONSTANTS
 import matplotlib.pyplot as plt
 import numpy as np
@@ -12,12 +11,19 @@ def fix_random_seed(seed):
     np.random.seed(seed)
     random.seed(seed)
 
+
 # Fixing the random seed
 fix_random_seed(1989)
 
 
-def shuffle(input: list) -> None:
+def shuffle_list(input: list) -> None:
     random.shuffle(input)
+
+
+def shuffle_2D_array(input: np.ndarray) -> None:
+    assert len(input.shape) == 2, "Value Error: the shape is not 2D"
+    np.random.shuffle(input)
+
 
 
 def load_csv_logs(folder_path: str) -> pd.DataFrame:

@@ -15,10 +15,12 @@ def add_augmentations(dataset: tf.data.Dataset, config_augmentation: dict) -> tf
     :param config_augmentation: the transformations and their params
     :return: dataset_augmented
     """
-    augmentation_pipeline = create_ComposeObject(config_augmentation)
-    dataset_augmented = dataset.map(partial(augment_images, augmentation_pipeline=augmentation_pipeline))
-    # num_parallel_calls=tf.data.experimental.AUTOTUNE).prefetch(tf.data.experimental.AUTOTUNE)
-    return dataset_augmented
+    if config_augmentation is not None and len(config_augmentation) > 0:
+        augmentation_pipeline = create_ComposeObject(config_augmentation)
+        dataset_augmented = dataset.map(partial(augment_images, augmentation_pipeline=augmentation_pipeline))
+        return dataset_augmented
+    else:
+        return dataset
 
 
 def create_ComposeObject(config_augmentation: dict) -> A.Compose:
@@ -36,6 +38,8 @@ def create_ComposeObject(config_augmentation: dict) -> A.Compose:
         elif transform == "Resize":
             transforms.append(A.Resize(height=params["height"],
                                        width=params["width"]))
+        elif transform == "HorizontalFlip":
+            transforms.append(A.HorizontalFlip(p=params["p"]))
         else:
             raise ValueError(f"transform {transform} not implemented")
 

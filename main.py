@@ -9,22 +9,23 @@ if __name__ == "__main__":
 
     # To train a model with a specific dataset
     config_train = {
-        "model_name": "test_aug",
-        "dataset": "data_test",
+        "model_name": "test",
+        "dataset": "data_001",
         "is_new_experiment": True,
         "image_size": (480, 640),  # height x width
-        "batch_size": 9,
-        "epochs": 5
+        "batch_size": 16,
+        "epochs": 10
     }
     config_augmentation = {
-        "RandomCrop": {"height":280, "width": 440, "p":1},
-        "Resize": {"height":480, "width": 640}
+        #"HorizontalFlip": {"p":0.5}
     }
     train.train_experiment(config_train, config_augmentation)
 
-    #print("\nEvaluating experiment...")
-    #evaluate_and_report(config)
+    print("\nEvaluating experiment...")
+    evaluate_and_report(config_train)
 
+    # TODO: add type checking with Pytype (https://theaisummer.com/best-practices-deep-learning-code/)
+    # TODO: code style checker for TF: Pylint
 
 
 
