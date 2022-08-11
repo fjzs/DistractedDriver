@@ -1,13 +1,13 @@
 CLASSES = {0:"Safe driving",
            1:"Texting right hand",
-           2:"Talking phone right hand",
+           2:"Phone right hand",
            3:"Texting left hand",
-           4:"Talking phone left hand",
-           5:"Operating the radio",
+           4:"Phone left hand",
+           5:"Operating radio",
            6:"Drinking",
            7:"Reaching behind",
-           8:"Hair and/or makeup",
-           9:"Talking to passenger"
+           8:"Hair or makeup",
+           9:"Talking passenger"
            }
 NUM_CLASSES = len(CLASSES)
 

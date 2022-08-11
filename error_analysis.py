@@ -29,7 +29,7 @@ def evaluate_and_report(config: dict) -> None:
     # ground_truth shape: (m,)
     # pred_val has shape (m,)
     images, ground_truth = extract_images_gt(dataset)
-    predictions = get_predictions(model, images, config["batch_size"])
+    probabilities, predictions = get_probabilities_and_predictions(model, images, config["batch_size"])
 
     # Generate and print aggregated performance across classes
     target_names = CLASSES.values()
@@ -44,7 +44,7 @@ def evaluate_and_report(config: dict) -> None:
     print(f"most frequent mistakes report created")
 
     # Now assemble and print the visual report
-    create_visual_report(mistakes, images, ground_truth, predictions, model, experiment_folder, topK=10)
+    create_visual_report(mistakes, images, ground_truth, predictions, probabilities, model, experiment_folder, topK=3)
 
 
 def print_mistakes_report_with_table(mistakes: list, exp_folder_path: str, topK: int = 10) -> None:
@@ -118,19 +118,22 @@ def create_mistakes_list(ground_truth: np.ndarray, predictions: np.ndarray) -> l
     return mistake_list
 
 
-def get_predictions(model: keras.Model, images: np.ndarray, batch_size: int) -> np.ndarray:
+def get_probabilities_and_predictions(model: keras.Model, images: np.ndarray, batch_size: int) -> np.ndarray:
     """
-    Gets the prediction of the model with a given dataset for all classes
-    :param model:
+    Gets the probabilities and the predictions (with argmax) of the model with a given dataset with K classes
+    :param model: keras Model
     :param images: of shape (m, h, w, c)
-    :return: predictions, np array with shape (m,)
+    :param batch_size: batch size to process the images
+    :return:
+        - probabilities: np array with shape (m, K)
+        - predictions: np array with shape (m,)
     """
 
     # This is a (m,K) array, where m is the number of examples and K is the number of classes
-    predictions = model.predict(x=images, batch_size=batch_size)
+    probabilities = model.predict(x=images, batch_size=batch_size)
     # This is a (m,) vector
-    predictions = np.argmax(predictions, axis=1)
-    return predictions
+    predictions = np.argmax(probabilities, axis=1)
+    return probabilities, predictions
 
 
 def extract_images_gt(dataset: tf.data.Dataset) -> np.ndarray:
@@ -153,7 +156,7 @@ def extract_images_gt(dataset: tf.data.Dataset) -> np.ndarray:
 
 
 def create_visual_report(mistakes: list, images: np.ndarray, ground_truth: np.ndarray, predictions: np.ndarray,
-                         model: keras.Model, save_directory:str, topK: int = 10):
+                         probabilities: np.ndarray, model: keras.Model, save_directory:str, topK: int = 10):
 
     for i, mistake in enumerate(mistakes):
 
@@ -172,12 +175,12 @@ def create_visual_report(mistakes: list, images: np.ndarray, ground_truth: np.nd
 
         # Create the visual report for this mistake
         create_visual_report_single_page(model, ranking, gt_index_class, pred_index_class, percentage_within_mistakes,
-                                         images, joint_index_gt_pred, save_directory)
+                                         images, probabilities, joint_index_gt_pred, save_directory)
 
 
 def create_visual_report_single_page(model: keras.Model, ranking: int, gt_index: int, pred_index: int,
-                                     percentage_within_mistakes, images: np.ndarray, joint_index_gt_pred: np.ndarray,
-                                     save_directory:str, size:int = 5):
+                                     percentage_within_mistakes, images: np.ndarray, probabilities: np.ndarray,
+                                     joint_index_gt_pred: np.ndarray, save_directory:str, size:int = 5):
 
     # Shuffle the rows to pick a random subset of mistakes to show in a single page
     util.shuffle_2D_array(joint_index_gt_pred)
@@ -186,10 +189,13 @@ def create_visual_report_single_page(model: keras.Model, ranking: int, gt_index:
     final_size = min(size, len(joint_index_gt_pred))
     joint_index_gt_pred = joint_index_gt_pred[0:final_size]
 
-    # Assemble the visual report figure: in the first column the raw image, in the second the grad CAM
+    # Assemble the visual report figure:
+    # First column: the raw image
+    # Second column: Grad CAM
+    # Third column: Probabilities
     gt_class = CLASSES[gt_index]
     pred_class = CLASSES[pred_index]
-    fig, axs = plt.subplots(final_size, 2, figsize=(8, 11))
+    fig, axs = plt.subplots(final_size, 3, figsize=(14, 14), constrained_layout=True)#
     title = f"Examples of ground truth = {gt_class} and prediction = {pred_class}" \
             f"\nRanking: {ranking} with fraction of mistakes: {percentage_within_mistakes}" \
             f"\nOn the left: input image     On the right: Grad CAM of the prediction"
@@ -197,14 +203,35 @@ def create_visual_report_single_page(model: keras.Model, ranking: int, gt_index:
 
     # Assemble the plots of each example
     explainer = GradCAM()
+    classes_indices = np.arange(len(CLASSES))
+    values = []
+    for key, value in CLASSES.items():
+        values.append(str(key) + "_" + value)
+    x_axis = np.linspace(0, 1.0, 5, endpoint=True)
     for i in range(final_size):
         index = joint_index_gt_pred[i, 0]
         image_i = images[index]
+        probabilities_i = probabilities[index]
+
+        # Original image
         axs[i, 0].imshow(image_i.astype("uint8"))
-        # Obtain grad Cam now
+        axs[i, 0].set_axis_off()
+
+        # Grad Cam
         data = ([image_i], None)
-        grid = explainer.explain(data, model, class_index=pred_index, image_weight=0.3)
+        grid = explainer.explain(data, model, class_index=pred_index, image_weight=0.2)
         axs[i, 1].imshow(grid.astype("uint8"))
+        axs[i, 1].set_axis_off()
+
+        # Probabilities
+        x = CLASSES.values()
+        barlist = axs[i, 2].barh(y=classes_indices, width=probabilities_i)
+        barlist[gt_index].set_color("green")  # This is the ground truth set to green
+        axs[i, 2].set_yticks(classes_indices, labels=values, fontsize=7)
+        axs[i, 2].set_xticks(ticks=x_axis, fontsize=7)
+        axs[i, 2].invert_yaxis()  # labels read top-to-bottom
+        axs[i, 2].set_xlabel('Probability', fontsize=7)
+
     filename = "error_analysis_top_" + str(ranking).zfill(2)
     plt.savefig(os.path.join(save_directory, filename))
     print(f"Saved visual report: {filename}")
@@ -219,7 +246,8 @@ if __name__ == "__main__":
         "batch_size": 16,
         "epochs": 10
     }
-    evaluate_and_report(config_train)
+    #evaluate_and_report(config_train)
+
 
 
 
