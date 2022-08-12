@@ -5,6 +5,7 @@ import dataset_loader
 from keras.applications import EfficientNetB2
 from keras import models, layers, optimizers
 from tensorflow.keras.callbacks import CSVLogger, ModelCheckpoint
+import tensorflow as tf
 import os
 import time
 import util
@@ -26,10 +27,7 @@ def train_experiment(config_train: dict, config_augmentation: dict) -> None:
 
     # Assemble the train and val dataset
     train_dataset = dataset_loader.load_dataset_split("train", config_train, True)
-    img_width, img_height = config_train["image_size"]
-    #data_augmenter.unit_test_map(train_dataset)
     train_dataset = add_augmentations(train_dataset, config_augmentation)
-    #util.visualize_dataset(train_dataset)
     val_dataset = dataset_loader.load_dataset_split("val", config_train, True)
 
     # Callbacks
@@ -51,14 +49,18 @@ def train_experiment(config_train: dict, config_augmentation: dict) -> None:
     if not is_new_experiment:
         df_previous = util.load_csv_logs(experiment_dir)
 
+    # Add the batching feature to the datasets
+    train_dataset.batch(batch_size=config_train["batch_size"], num_parallel_calls=tf.data.AUTOTUNE)
+    val_dataset.batch(batch_size=config_train["batch_size"], num_parallel_calls=tf.data.AUTOTUNE)
+
     # Train the model now
     time_init = time.time()
     model.fit(
-        x=train_dataset,
-        epochs=config_train["epochs"],
-        verbose=1,
-        callbacks=[csv_logger, model_checkpoint],
-        validation_data=val_dataset
+       x=train_dataset,
+       epochs=config_train["epochs"],
+       verbose=1,
+       callbacks=[csv_logger, model_checkpoint],
+       validation_data=val_dataset
     )
     time_elapsed = round(time.time() - time_init, 0)
     print(f"Elapsed seconds in training = {time_elapsed} seconds")

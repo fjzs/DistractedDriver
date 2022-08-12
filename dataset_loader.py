@@ -24,13 +24,14 @@ def load_dataset_split(split:str, config:dict, shuffle: bool) -> tf.data.Dataset
         labels="inferred",  # labels are generated from the directory structure
         label_mode="int",  # means that the labels are encoded as integers
         color_mode="rgb",
-        batch_size=config["batch_size"],
+        batch_size=1,  # do not add batch size yet
         image_size=config["image_size"],
         shuffle=shuffle,
         seed=1989
     )
     dataset.prefetch(tf.data.AUTOTUNE)
-
+    if shuffle:
+        dataset.shuffle(buffer_size=1024, seed=1989, reshuffle_each_iteration=True)
 
     return dataset
 

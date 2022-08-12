@@ -1,6 +1,7 @@
 from CONSTANTS import CLASSES
 from dataset_loader import load_dataset_split
 import keras
+import math
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -16,7 +17,7 @@ def evaluate_and_report(config: dict) -> None:
     Evaluates a model performance in the val split of a dataset and creates 3 reports:
         - Report per class
         - Report aggregated on the classes
-        - Visual report showing the top most frequent mistakes with grad Cam
+        - Visual report showing the top most frequent correct and incorrect predictions
     :param config: the configuration file of the experiment, specifies the necessary details to proceed
     :return:
     """
@@ -26,10 +27,19 @@ def evaluate_and_report(config: dict) -> None:
     model = keras.models.load_model(os.path.join(experiment_folder,"best.hdf5"))
     dataset = load_dataset_split("val", config, shuffle=False)
 
+    # In error analysis we are interested in identifying the filenames associated with the images
+    # This array will correspond to the other arrays only if the dataset is not shuffled
+    image_files = list(dataset.file_paths)
+
     # ground_truth shape: (m,)
     # pred_val has shape (m,)
-    images, ground_truth = extract_images_gt(dataset)
-    probabilities, predictions = get_probabilities_and_predictions(model, images, config["batch_size"])
+    # We will take a sample of the images of max_number_images, this could be less than the size of the dataset
+    # So we will keep an array called "original_index_considered" to map to the filenames
+    images, ground_truth, original_index_considered = extract_images_and_groundtruth(dataset,
+                                                                                     height=config["image_size"][0],
+                                                                                     width=config["image_size"][1])
+
+    probabilities, predictions = get_probabilities_and_predictions(model, images)
 
     # Generate and print aggregated performance across classes
     target_names = CLASSES.values()
@@ -44,7 +54,16 @@ def evaluate_and_report(config: dict) -> None:
     print(f"most frequent mistakes report created")
 
     # Now assemble and print the visual report
-    create_visual_report(mistakes, images, ground_truth, predictions, probabilities, model, experiment_folder, topK=3)
+    create_visual_report(mistakes,
+                         images,
+                         ground_truth,
+                         predictions,
+                         probabilities,
+                         model,
+                         experiment_folder,
+                         image_files,
+                         original_index_considered,
+                         topK=10)
 
 
 def print_mistakes_report_with_table(mistakes: list, exp_folder_path: str, topK: int = 10) -> None:
@@ -55,7 +74,8 @@ def print_mistakes_report_with_table(mistakes: list, exp_folder_path: str, topK:
     :return:
     """
     table = []
-    for i in range(topK):
+    final_number = min(topK, len(mistakes))
+    for i in range(final_number):
         row = mistakes[i]
         ranking = row[0]
         gt_class_index = row[1]
@@ -114,11 +134,11 @@ def create_mistakes_list(ground_truth: np.ndarray, predictions: np.ndarray) -> l
     for i, (gt, pred, count) in enumerate(gt_pred_count):
         percentage_within_predictions = round(count / total_predictions,2)
         percentage_within_mistakes = round(count / total_mistakes, 2)
-        mistake_list.append((i+1, gt, pred, count, percentage_within_predictions, percentage_within_mistakes))
+        mistake_list.append((i+1, int(gt), int(pred), count, percentage_within_predictions, percentage_within_mistakes))
     return mistake_list
 
 
-def get_probabilities_and_predictions(model: keras.Model, images: np.ndarray, batch_size: int) -> np.ndarray:
+def get_probabilities_and_predictions(model: keras.Model, images: np.ndarray, batch_size: int = 16) -> np.ndarray:
     """
     Gets the probabilities and the predictions (with argmax) of the model with a given dataset with K classes
     :param model: keras Model
@@ -129,34 +149,75 @@ def get_probabilities_and_predictions(model: keras.Model, images: np.ndarray, ba
         - predictions: np array with shape (m,)
     """
 
-    # This is a (m,K) array, where m is the number of examples and K is the number of classes
-    probabilities = model.predict(x=images, batch_size=batch_size)
+    # Get the shapes
+    m = images.shape[0]
+    K = len(CLASSES)
+
+    # Result will be stored here:
+    probabilities = np.zeros((m,K))
+
+    # Iterate over the images to process them in batches due to memory constraints
+    batches_number = int(math.ceil(m/batch_size))
+
+    for b in range(batches_number):
+        print(f"Processing batch {b+1}/{batches_number}")
+        index_ini = b*batch_size
+        index_end = min(index_ini + batch_size, m-1)  # edge case for the last batch
+        probabilities[index_ini:index_end,:] = model.predict(x=images[index_ini:index_end])
+
     # This is a (m,) vector
     predictions = np.argmax(probabilities, axis=1)
     return probabilities, predictions
 
 
-def extract_images_gt(dataset: tf.data.Dataset) -> np.ndarray:
+def extract_images_and_groundtruth(dataset: tf.data.Dataset, height: int, width: int, max_number_images: int = 2000) -> \
+        (np.ndarray, np.ndarray, list):
     """
     From a tf.data.Dataset extracts the images and the gt
-    :param dataset:
+        - param dataset:
+        - param height:
+        - param width:
+        - param max_number_images:
     :return:
     """
 
-    ground_truth = None
-    images = None
-    for img, gt in dataset.as_numpy_iterator():
-        if images is None:
-            images = img
-            ground_truth = gt
+    # Get the size and shapes to fill the output arrays
+    m = len(dataset.file_paths)
+
+    # Check if m > max_number_images and create a sample logic
+    final_number = m
+    consider_image = None
+    if m > max_number_images:
+        final_number = max_number_images
+        consider_image = [True]*final_number + [False]*(m-final_number)
+        util.shuffle_list(consider_image)
+    else:
+        consider_image = [True]*final_number
+
+    # Create the arrays to fill them
+    images = np.zeros((final_number, height, width, 3))
+    ground_truth = np.zeros((final_number,))
+
+    # Now fill these arrays
+    original_index_considered = []
+    print("Extracting the images and labels from the dataset")
+    i = 0
+    for j, (img, gt) in enumerate(dataset):
+        if consider_image[j]:
+            print(f"example {j}: selected -> {i + 1}/{final_number}")
+            original_index_considered.append(j)
+            images[i, :, :, :] = img
+            ground_truth[i] = gt
+            i += 1
         else:
-            images = np.concatenate((images, img))
-            ground_truth = np.concatenate((ground_truth, gt))
-    return images, ground_truth
+            print(f"example {j}: not selected")
+
+    return images, ground_truth, original_index_considered
 
 
 def create_visual_report(mistakes: list, images: np.ndarray, ground_truth: np.ndarray, predictions: np.ndarray,
-                         probabilities: np.ndarray, model: keras.Model, save_directory:str, topK: int = 10):
+                         probabilities: np.ndarray, model: keras.Model, save_directory:str, image_files: list,
+                         original_index_considered: list, topK: int = 10):
 
     for i, mistake in enumerate(mistakes):
 
@@ -167,7 +228,7 @@ def create_visual_report(mistakes: list, images: np.ndarray, ground_truth: np.nd
 
         # Get all the indices of these mistakes happening
         indices = np.arange(len(ground_truth))
-        joint_index_gt_pred = np.column_stack((indices, ground_truth, predictions))
+        joint_index_gt_pred = np.column_stack((indices, ground_truth, predictions)).astype(int)
 
         # Keep only rows where gt and pred belong to the current mistake gt and pred
         joint_index_gt_pred = joint_index_gt_pred[joint_index_gt_pred[:, 1] == gt_index_class]  # filter by gt
@@ -175,12 +236,14 @@ def create_visual_report(mistakes: list, images: np.ndarray, ground_truth: np.nd
 
         # Create the visual report for this mistake
         create_visual_report_single_page(model, ranking, gt_index_class, pred_index_class, percentage_within_mistakes,
-                                         images, probabilities, joint_index_gt_pred, save_directory)
+                                         images, probabilities, joint_index_gt_pred, save_directory, image_files,
+                                         original_index_considered)
 
 
 def create_visual_report_single_page(model: keras.Model, ranking: int, gt_index: int, pred_index: int,
                                      percentage_within_mistakes, images: np.ndarray, probabilities: np.ndarray,
-                                     joint_index_gt_pred: np.ndarray, save_directory:str, size:int = 5):
+                                     joint_index_gt_pred: np.ndarray, save_directory:str, image_files: list,
+                                     original_index_considered: list, size:int = 5):
 
     # Shuffle the rows to pick a random subset of mistakes to show in a single page
     util.shuffle_2D_array(joint_index_gt_pred)
@@ -212,10 +275,13 @@ def create_visual_report_single_page(model: keras.Model, ranking: int, gt_index:
         index = joint_index_gt_pred[i, 0]
         image_i = images[index]
         probabilities_i = probabilities[index]
+        original_image_index = original_index_considered[index]
+        image_filename = image_files[original_image_index]
 
         # Original image
         axs[i, 0].imshow(image_i.astype("uint8"))
         axs[i, 0].set_axis_off()
+        axs[i, 0].set_title(f"Filename: {image_filename}", fontsize=7)
 
         # Grad Cam
         data = ([image_i], None)

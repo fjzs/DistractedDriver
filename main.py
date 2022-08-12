@@ -9,17 +9,17 @@ if __name__ == "__main__":
 
     # To train a model with a specific dataset
     config_train = {
-        "model_name": "test",
-        "dataset": "data_001",
-        "is_new_experiment": True,
+        "model_name": "01_noAug",
+        "dataset": "data_100",
+        "is_new_experiment": False,
         "image_size": (480, 640),  # height x width
-        "batch_size": 16,
-        "epochs": 10
+        "batch_size": 10,
+        "epochs": 50
     }
     config_augmentation = {
         #"HorizontalFlip": {"p":0.5}
     }
-    train.train_experiment(config_train, config_augmentation)
+    #train.train_experiment(config_train, config_augmentation)
 
     print("\nEvaluating experiment...")
     evaluate_and_report(config_train)
