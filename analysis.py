@@ -17,7 +17,7 @@ def evaluate_and_report(config: dict) -> None:
     Evaluates a model performance in the val split of a dataset and creates 3 reports:
         - Report per class
         - Report aggregated on the classes
-        - Visual report showing the top most frequent correct and incorrect predictions
+        - Visual report showing the top most frequent correct and incorrect predictions with Grad Cam included
     :param config: the configuration file of the experiment, specifies the necessary details to proceed
     :return:
     """
@@ -27,7 +27,7 @@ def evaluate_and_report(config: dict) -> None:
     model = keras.models.load_model(os.path.join(experiment_folder,"best.hdf5"))
     dataset = load_dataset_split("val", config, shuffle=False)
 
-    # In error analysis we are interested in identifying the filenames associated with the images
+    # In the analysis we are interested in identifying the filenames associated with the images
     # This array will correspond to the other arrays only if the dataset is not shuffled
     image_files = list(dataset.file_paths)
 
@@ -38,7 +38,6 @@ def evaluate_and_report(config: dict) -> None:
     images, ground_truth, original_index_considered = extract_images_and_groundtruth(dataset,
                                                                                      height=config["image_size"][0],
                                                                                      width=config["image_size"][1])
-
     probabilities, predictions = get_probabilities_and_predictions(model, images)
 
     # Generate and print aggregated performance across classes
@@ -48,12 +47,13 @@ def evaluate_and_report(config: dict) -> None:
         file.write(str(clf_report))
     print(f"classification report created")
 
-    # Compute most frequent mistakes per-class and print the report
+    # Compute most frequent mistakes and true positives
     mistakes = create_mistakes_list(ground_truth, predictions)
+    true_positives = create_true_positives_list(ground_truth, predictions)
     print_mistakes_report_with_table(mistakes, experiment_folder, topK=10)
     print(f"most frequent mistakes report created")
 
-    # Now assemble and print the visual report
+    # Now assemble visual report for mistakes
     create_visual_report(mistakes,
                          images,
                          ground_truth,
@@ -64,6 +64,9 @@ def evaluate_and_report(config: dict) -> None:
                          image_files,
                          original_index_considered,
                          topK=10)
+
+    # Now assemble visual report for true positives
+    #TODO continue
 
 
 def print_mistakes_report_with_table(mistakes: list, exp_folder_path: str, topK: int = 10) -> None:
@@ -97,9 +100,50 @@ def print_mistakes_report_with_table(mistakes: list, exp_folder_path: str, topK:
         file.write(str(report))
 
 
+def create_true_positives_list(ground_truth: np.ndarray, predictions: np.ndarray) -> list:
+    """
+    Creates a list of 6 tuples, such as (2, 4, 4, 10, 0.11, 0.82) each element representing:
+        - Ranking of this frequency true positive (2 or second)
+        - ground truth index class (4)
+        - predicted index class (4)
+        - frequency (10)
+        - % within total predictions (0.11)
+        - % within total true positives (0.82)
+    :param ground_truth: (m,) numpy array
+    :param predictions: (m,) numpy array
+    :return:
+    """
+
+    # Both gt and pred must be the same shape
+    assert ground_truth.shape == predictions.shape, "ground truth and predictions must have similar shape"
+
+    # Joint gt_pred array
+    joint_gt_pred = np.column_stack((ground_truth, predictions))
+
+    # Keep correct predictions only
+    joint_gt_pred_TP = joint_gt_pred[joint_gt_pred[:,0] == joint_gt_pred[:,1]]
+
+    # Count the cases
+    unique, counts = np.unique(joint_gt_pred_TP, return_counts=True, axis=0)
+    total_TP = sum(counts)
+    total_predictions = len(ground_truth)
+
+    # Transform to list and sort in a descending fashion
+    gt_pred_count = list(np.column_stack((unique, counts)))
+    gt_pred_count.sort(key=lambda x:-x[-1])
+
+    # Add the percentages values
+    TP_list = []
+    for i, (gt, pred, count) in enumerate(gt_pred_count):
+        percentage_within_predictions = round(count / total_predictions, 2)
+        percentage_within_TP = round(count / total_TP, 2)
+        TP_list.append((i+1, int(gt), int(pred), count, percentage_within_predictions, percentage_within_TP))
+    return TP_list
+
+
 def create_mistakes_list(ground_truth: np.ndarray, predictions: np.ndarray) -> list:
     """
-    Creates a list of 3 tuples, such as (2, 4, 5, 10, 0.11, 0.82) each element representing:
+    Creates a list of 6 tuples, such as (2, 4, 5, 10, 0.11, 0.82) each element representing:
         - Ranking of this frequency mistake (2 or second)
         - ground truth index class (4)
         - predicted index class (5)
@@ -166,7 +210,7 @@ def get_probabilities_and_predictions(model: keras.Model, images: np.ndarray, ba
         probabilities[index_ini:index_end,:] = model.predict(x=images[index_ini:index_end])
 
     # This is a (m,) vector
-    predictions = np.argmax(probabilities, axis=1)
+    predictions = np.argmax(probabilities, axis=1).astype(int)
     return probabilities, predictions
 
 
@@ -207,7 +251,7 @@ def extract_images_and_groundtruth(dataset: tf.data.Dataset, height: int, width:
             print(f"example {j}: selected -> {i + 1}/{final_number}")
             original_index_considered.append(j)
             images[i, :, :, :] = img
-            ground_truth[i] = gt
+            ground_truth[i] = int(gt)
             i += 1
         else:
             print(f"example {j}: not selected")

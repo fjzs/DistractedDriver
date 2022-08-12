@@ -9,8 +9,8 @@ if __name__ == "__main__":
 
     # To train a model with a specific dataset
     config_train = {
-        "model_name": "01_noAug",
-        "dataset": "data_100",
+        "model_name": "test",
+        "dataset": "data_001",
         "is_new_experiment": False,
         "image_size": (480, 640),  # height x width
         "batch_size": 10,
