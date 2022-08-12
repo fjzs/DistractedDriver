@@ -1,6 +1,6 @@
 import dataset_generator
 from CONSTANTS import DIR_DATA, DIR_EXPERIMENTS
-from error_analysis import evaluate_and_report
+from analysis import evaluate_and_report
 import train
 
 if __name__ == "__main__":
