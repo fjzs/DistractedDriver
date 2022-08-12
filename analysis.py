@@ -243,7 +243,7 @@ def create_visual_report(mistakes: list, images: np.ndarray, ground_truth: np.nd
 def create_visual_report_single_page(model: keras.Model, ranking: int, gt_index: int, pred_index: int,
                                      percentage_within_mistakes, images: np.ndarray, probabilities: np.ndarray,
                                      joint_index_gt_pred: np.ndarray, save_directory:str, image_files: list,
-                                     original_index_considered: list, size:int = 5):
+                                     original_index_considered: list, size:int = 10):
 
     # Shuffle the rows to pick a random subset of mistakes to show in a single page
     util.shuffle_2D_array(joint_index_gt_pred)
@@ -258,7 +258,7 @@ def create_visual_report_single_page(model: keras.Model, ranking: int, gt_index:
     # Third column: Probabilities
     gt_class = CLASSES[gt_index]
     pred_class = CLASSES[pred_index]
-    fig, axs = plt.subplots(final_size, 3, figsize=(14, 14), constrained_layout=True)#
+    fig, axs = plt.subplots(final_size, 3, figsize=(14, 20), constrained_layout=True)#
     title = f"Examples of ground truth = {gt_class} and prediction = {pred_class}" \
             f"\nRanking: {ranking} with fraction of mistakes: {percentage_within_mistakes}" \
             f"\nOn the left: input image     On the right: Grad CAM of the prediction"
