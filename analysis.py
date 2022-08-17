@@ -32,7 +32,10 @@ def evaluate_and_report(config: dict) -> None:
     image_files = list(dataset.file_paths)
 
     # ground_truth shape: (m,)
-    # pred_val has shape (m,)
+    # predictions has shape (m,)
+    # images has shape (m,h,w,c)
+    # probabilities has shape (m,K)
+    # K being the number of classes
     # We will take a sample of the images of max_number_images, this could be less than the size of the dataset
     # So we will keep an array called "original_index_considered" to map to the filenames
     images, ground_truth, original_index_considered = extract_images_and_groundtruth(dataset,
@@ -48,13 +51,14 @@ def evaluate_and_report(config: dict) -> None:
     print(f"classification report created")
 
     # Compute most frequent mistakes and true positives
-    mistakes = create_mistakes_list(ground_truth, predictions)
-    true_positives = create_true_positives_list(ground_truth, predictions)
-    print_mistakes_report_with_table(mistakes, experiment_folder, topK=10)
+    mistake_list, tp_list = create_mistakes_and_true_positives_count(ground_truth, predictions)
+    print_report_with_table(mistake_list, experiment_folder, "mistakes", topK=10)
+    print_report_with_table(tp_list, experiment_folder, "true positives", topK=10)
     print(f"most frequent mistakes report created")
 
-    # Now assemble visual report for mistakes
-    create_visual_report(mistakes,
+    # Create the visual report
+    create_visual_report(mistake_list,
+                         tp_list,
                          images,
                          ground_truth,
                          predictions,
@@ -63,23 +67,18 @@ def evaluate_and_report(config: dict) -> None:
                          experiment_folder,
                          image_files,
                          original_index_considered,
-                         topK=10)
-
-    # Now assemble visual report for true positives
-    #TODO continue
+                         topK=5)
 
 
-def print_mistakes_report_with_table(mistakes: list, exp_folder_path: str, topK: int = 10) -> None:
+def print_report_with_table(aggregation_list: list, exp_folder_path: str, report_name: str, topK: int = 10) -> None:
     """
-    Table has headers: ["Ranking", "Ground Truth", "Prediction", "Frequency", "% in total predictions", "% in total mistakes"]
-    :param mistakes:
-    :param topK:
-    :return:
+    Table has headers: ["Ranking", "Ground Truth", "Prediction", "Frequency", "% in total predictions"]
+    :return: None
     """
     table = []
-    final_number = min(topK, len(mistakes))
+    final_number = min(topK, len(aggregation_list))
     for i in range(final_number):
-        row = mistakes[i]
+        row = aggregation_list[i]
         ranking = row[0]
         gt_class_index = row[1]
         pred_class_index = row[2]
@@ -87,69 +86,25 @@ def print_mistakes_report_with_table(mistakes: list, exp_folder_path: str, topK:
         gt_class = CLASSES[gt_class_index]
         pred_class = CLASSES[pred_class_index]
         percentage_within_predictions = row[4]
-        percentage_within_mistakes = row[5]
-        new_row = [ranking, gt_class, pred_class, frequency, percentage_within_predictions, percentage_within_mistakes]
+        new_row = [ranking, gt_class, pred_class, frequency, percentage_within_predictions]
         table.append(new_row)
     report = tabulate(table, headers=["Ranking",
                                       "Ground Truth",
                                       "Prediction",
                                       "Frequency",
-                                      "% in total predictions",
-                                      "% in total mistakes"])
-    with open(os.path.join(exp_folder_path, "mistakes_report.txt"), "w") as file:
+                                      "% in total predictions"])
+    with open(os.path.join(exp_folder_path, report_name + ".txt"), "w") as file:
         file.write(str(report))
 
 
-def create_true_positives_list(ground_truth: np.ndarray, predictions: np.ndarray) -> list:
+def create_mistakes_and_true_positives_count(ground_truth: np.ndarray, predictions: np.ndarray) -> list:
     """
-    Creates a list of 6 tuples, such as (2, 4, 4, 10, 0.11, 0.82) each element representing:
-        - Ranking of this frequency true positive (2 or second)
-        - ground truth index class (4)
-        - predicted index class (4)
-        - frequency (10)
-        - % within total predictions (0.11)
-        - % within total true positives (0.82)
-    :param ground_truth: (m,) numpy array
-    :param predictions: (m,) numpy array
-    :return:
-    """
-
-    # Both gt and pred must be the same shape
-    assert ground_truth.shape == predictions.shape, "ground truth and predictions must have similar shape"
-
-    # Joint gt_pred array
-    joint_gt_pred = np.column_stack((ground_truth, predictions))
-
-    # Keep correct predictions only
-    joint_gt_pred_TP = joint_gt_pred[joint_gt_pred[:,0] == joint_gt_pred[:,1]]
-
-    # Count the cases
-    unique, counts = np.unique(joint_gt_pred_TP, return_counts=True, axis=0)
-    total_TP = sum(counts)
-    total_predictions = len(ground_truth)
-
-    # Transform to list and sort in a descending fashion
-    gt_pred_count = list(np.column_stack((unique, counts)))
-    gt_pred_count.sort(key=lambda x:-x[-1])
-
-    # Add the percentages values
-    TP_list = []
-    for i, (gt, pred, count) in enumerate(gt_pred_count):
-        percentage_within_predictions = round(count / total_predictions, 2)
-        percentage_within_TP = round(count / total_TP, 2)
-        TP_list.append((i+1, int(gt), int(pred), count, percentage_within_predictions, percentage_within_TP))
-    return TP_list
-
-
-def create_mistakes_list(ground_truth: np.ndarray, predictions: np.ndarray) -> list:
-    """
-    Creates a list of 6 tuples, such as (2, 4, 5, 10, 0.11, 0.82) each element representing:
-        - Ranking of this frequency mistake (2 or second)
+    Creates a list of 5 tuples, such as (2, 4, 5, 10, 0.11) each element representing:
+        - Ranking of this frequency event (2)
         - ground truth index class (4)
         - predicted index class (5)
         - frequency (10)
         - % within total predictions (0.11)
-        - % within total mistakes (0.82)
     :param ground_truth: (m,) numpy array
     :param predictions: (m,) numpy array
     :return:
@@ -157,29 +112,39 @@ def create_mistakes_list(ground_truth: np.ndarray, predictions: np.ndarray) -> l
 
     # Both gt and pred must be the same shape
     assert ground_truth.shape == predictions.shape, "ground truth and predictions must have similar shape"
+    assert len(ground_truth.shape) == 1, "inputs must be vectors"
+
+    # Retrieve the shapes
+    m = ground_truth.shape[0]
 
     # Joint gt_pred array
     joint_gt_pred = np.column_stack((ground_truth, predictions))
 
     # Remove correct predictions
-    joint_gt_pred_mistakes = joint_gt_pred[joint_gt_pred[:,0] != joint_gt_pred[:,1]]
+    joint_gt_pred_mistakes = joint_gt_pred[joint_gt_pred[:,0] != joint_gt_pred[:,1]]  # gt != pred
+    joint_gt_pred_tp = joint_gt_pred[joint_gt_pred[:,0] == joint_gt_pred[:,1]]  # gt == pred
 
-    # Count the cases
-    unique, counts = np.unique(joint_gt_pred_mistakes, return_counts=True, axis=0)
-    total_mistakes = sum(counts)
-    total_predictions = len(ground_truth)
+    # Aggregate and count the cases
+    unique_mistakes, count_mistakes = np.unique(joint_gt_pred_mistakes, return_counts=True, axis=0)
+    unique_tp, count_tp = np.unique(joint_gt_pred_tp, return_counts=True, axis=0)
 
     # Transform to list and sort in a descending fashion
-    gt_pred_count = list(np.column_stack((unique, counts)))
-    gt_pred_count.sort(key=lambda x:-x[-1])
+    gt_pred_mistakes = list(np.column_stack((unique_mistakes, count_mistakes)))
+    gt_pred_mistakes.sort(key=lambda x:-x[-1])
+    gt_pred_tp = list(np.column_stack((unique_tp, count_tp)))
+    gt_pred_tp.sort(key=lambda x: -x[-1])
 
-    # Add the percentages values
+    # Add the ranking and the percentage
     mistake_list = []
-    for i, (gt, pred, count) in enumerate(gt_pred_count):
-        percentage_within_predictions = round(count / total_predictions,2)
-        percentage_within_mistakes = round(count / total_mistakes, 2)
-        mistake_list.append((i+1, int(gt), int(pred), count, percentage_within_predictions, percentage_within_mistakes))
-    return mistake_list
+    tp_list = []
+    for i, (gt, pred, count) in enumerate(gt_pred_mistakes):
+        percentage = round(count / m,2)
+        mistake_list.append((i+1, int(gt), int(pred), int(count), percentage))
+    for i, (gt, pred, count) in enumerate(gt_pred_tp):
+        percentage = round(count / m,2)
+        tp_list.append((i+1, int(gt), int(pred), int(count), percentage))
+
+    return mistake_list, tp_list
 
 
 def get_probabilities_and_predictions(model: keras.Model, images: np.ndarray, batch_size: int = 16) -> np.ndarray:
@@ -259,37 +224,46 @@ def extract_images_and_groundtruth(dataset: tf.data.Dataset, height: int, width:
     return images, ground_truth, original_index_considered
 
 
-def create_visual_report(mistakes: list, images: np.ndarray, ground_truth: np.ndarray, predictions: np.ndarray,
-                         probabilities: np.ndarray, model: keras.Model, save_directory:str, image_files: list,
-                         original_index_considered: list, topK: int = 10):
+def create_visual_report(mistakes: list, true_positives: list, images: np.ndarray, ground_truth: np.ndarray,
+                         predictions: np.ndarray, probabilities: np.ndarray, model: keras.Model, save_directory:str,
+                         image_files: list, original_index_considered: list, topK: int = 10):
 
-    for i, mistake in enumerate(mistakes):
+    lists = [mistakes, true_positives]
+    for l in lists:
+        for i, data in enumerate(l):
+            if i == topK:
+                break
 
-        if i == topK:
-            break
+            # Retrieve the data, for instance:
+            # (1, 5, 4, 10, 0.09)
+            ranking, gt_index, pred_index, count, percentage = data
 
-        ranking, gt_index_class, pred_index_class, frequency, percentage_within_predictions, percentage_within_mistakes = mistake
+            # Connect these cases with the original image index
+            indices = np.arange(len(ground_truth))
+            joint_index_gt_pred = np.column_stack((indices, ground_truth, predictions)).astype(int)
+            joint_index_gt_pred = joint_index_gt_pred[joint_index_gt_pred[:, 1] == gt_index]  # filter by gt
+            joint_index_gt_pred = joint_index_gt_pred[joint_index_gt_pred[:, 2] == pred_index]  # filter by pred
 
-        # Get all the indices of these mistakes happening
-        indices = np.arange(len(ground_truth))
-        joint_index_gt_pred = np.column_stack((indices, ground_truth, predictions)).astype(int)
-
-        # Keep only rows where gt and pred belong to the current mistake gt and pred
-        joint_index_gt_pred = joint_index_gt_pred[joint_index_gt_pred[:, 1] == gt_index_class]  # filter by gt
-        joint_index_gt_pred = joint_index_gt_pred[joint_index_gt_pred[:, 2] == pred_index_class]  # filter by pred
-
-        # Create the visual report for this mistake
-        create_visual_report_single_page(model, ranking, gt_index_class, pred_index_class, percentage_within_mistakes,
-                                         images, probabilities, joint_index_gt_pred, save_directory, image_files,
-                                         original_index_considered)
+            # Create the visual report for this combination of gt_index & pred_index
+            create_visual_report_single_page(model,
+                                             ranking,
+                                             gt_index,
+                                             pred_index,
+                                             percentage,
+                                             images,
+                                             probabilities,
+                                             joint_index_gt_pred,
+                                             save_directory,
+                                             image_files,
+                                             original_index_considered)
 
 
 def create_visual_report_single_page(model: keras.Model, ranking: int, gt_index: int, pred_index: int,
-                                     percentage_within_mistakes, images: np.ndarray, probabilities: np.ndarray,
+                                     fraction: float, images: np.ndarray, probabilities: np.ndarray,
                                      joint_index_gt_pred: np.ndarray, save_directory:str, image_files: list,
                                      original_index_considered: list, size:int = 10):
 
-    # Shuffle the rows to pick a random subset of mistakes to show in a single page
+    # Shuffle the rows to pick a random subset of cases
     util.shuffle_2D_array(joint_index_gt_pred)
 
     # Select a subset of the elements
@@ -302,10 +276,11 @@ def create_visual_report_single_page(model: keras.Model, ranking: int, gt_index:
     # Third column: Probabilities
     gt_class = CLASSES[gt_index]
     pred_class = CLASSES[pred_index]
-    fig, axs = plt.subplots(final_size, 3, figsize=(14, 20), constrained_layout=True)#
+    fig = plt.figure(figsize=(14, 20), constrained_layout=True)
+    type_analysis = "true_positives" if gt_index == pred_index else "errors"
+    #fig, axs = plt.subplots(final_size, 3, figsize=(14, 20), constrained_layout=True)
     title = f"Examples of ground truth = {gt_class} and prediction = {pred_class}" \
-            f"\nRanking: {ranking} with fraction of mistakes: {percentage_within_mistakes}" \
-            f"\nOn the left: input image     On the right: Grad CAM of the prediction"
+            f"\nRanking: #{ranking} among {type_analysis} and {round(100*fraction,2)}% cases in total predictions"
     fig.suptitle(title, fontsize=10)
 
     # Assemble the plots of each example
@@ -315,7 +290,9 @@ def create_visual_report_single_page(model: keras.Model, ranking: int, gt_index:
     for key, value in CLASSES.items():
         values.append(str(key) + "_" + value)
     x_axis = np.linspace(0, 1.0, 5, endpoint=True)
-    for i in range(final_size):
+
+    # Create the subplots
+    for i in range(0, final_size, 3):
         index = joint_index_gt_pred[i, 0]
         image_i = images[index]
         probabilities_i = probabilities[index]
@@ -323,26 +300,32 @@ def create_visual_report_single_page(model: keras.Model, ranking: int, gt_index:
         image_filename = image_files[original_image_index]
 
         # Original image
-        axs[i, 0].imshow(image_i.astype("uint8"))
-        axs[i, 0].set_axis_off()
-        axs[i, 0].set_title(f"Filename: {image_filename}", fontsize=7)
+        ax = fig.add_subplot(final_size, 3, i + 1)
+        ax.imshow(image_i.astype("uint8"))
+        ax.set_axis_off()
+        ax.set_title(f"Filename: {image_filename}", fontsize=9)
 
         # Grad Cam
         data = ([image_i], None)
         grid = explainer.explain(data, model, class_index=pred_index, image_weight=0.2)
-        axs[i, 1].imshow(grid.astype("uint8"))
-        axs[i, 1].set_axis_off()
+        ax = fig.add_subplot(final_size, 3, i + 2)
+        ax.imshow(grid.astype("uint8"))
+        ax.set_axis_off()
+        ax.set_title("Grad CAM", fontsize=9)
 
         # Probabilities
         x = CLASSES.values()
-        barlist = axs[i, 2].barh(y=classes_indices, width=probabilities_i)
+        ax = fig.add_subplot(final_size, 3, i + 3)
+        barlist = ax.barh(y=classes_indices, width=probabilities_i)
         barlist[gt_index].set_color("green")  # This is the ground truth set to green
-        axs[i, 2].set_yticks(classes_indices, labels=values, fontsize=7)
-        axs[i, 2].set_xticks(ticks=x_axis, fontsize=7)
-        axs[i, 2].invert_yaxis()  # labels read top-to-bottom
-        axs[i, 2].set_xlabel('Probability', fontsize=7)
+        ax.set_yticks(classes_indices, labels=values, fontsize=7)
+        ax.set_xticks(ticks=x_axis, fontsize=7)
+        ax.invert_yaxis()  # labels read top-to-bottom
+        ax.set_xlabel('Probability', fontsize=7)
+        ax.set_title("Probability prediction per class", fontsize=9)
 
-    filename = "error_analysis_top_" + str(ranking).zfill(2)
+
+    filename = "analysis_" + type_analysis + "_top_" + str(ranking).zfill(2)
     plt.savefig(os.path.join(save_directory, filename))
     print(f"Saved visual report: {filename}")
 
