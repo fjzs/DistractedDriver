@@ -4,7 +4,7 @@ from data_augmenter import add_augmentations
 import dataset_loader
 from keras.applications import EfficientNetB2
 from keras import models, layers, optimizers
-from tensorflow.keras.callbacks import CSVLogger, ModelCheckpoint
+from tensorflow.keras.callbacks import CSVLogger, ModelCheckpoint, EarlyStopping
 import tensorflow as tf
 import os
 import time
@@ -34,11 +34,12 @@ def train_experiment(config_train: dict, config_augmentation: dict) -> None:
     # Callbacks
     csv_logger = get_callback_CSVLogger(experiment_dir)
     model_checkpoint = get_callback_ModelCheckpoint(experiment_dir)
+    early_stopping = get_callback_EarlyStopping()
 
     # Define the model or load it if its necessary
     model = None
     if is_new_experiment:
-        model = create_model2(config_train)
+        model = create_model(config_train)
         model.compile(loss="sparse_categorical_crossentropy",
                   optimizer=optimizers.Adam(learning_rate=0.0001),
                   metrics=["accuracy"])
@@ -60,7 +61,7 @@ def train_experiment(config_train: dict, config_augmentation: dict) -> None:
        x=train_dataset,
        epochs=config_train["epochs"],
        verbose=1,
-       callbacks=[csv_logger, model_checkpoint],
+       callbacks=[csv_logger, model_checkpoint, early_stopping],
        validation_data=val_dataset
     )
     time_elapsed = round(time.time() - time_init, 0)
@@ -89,6 +90,17 @@ def get_callback_ModelCheckpoint(folder_path: str) -> ModelCheckpoint:
         mode="max"
     )
 
+def get_callback_EarlyStopping(monitor= "val_accuracy", min_delta = 0.01, patience = 10, verbose = 1, mode = "max") -> EarlyStopping:
+    return EarlyStopping(
+        monitor=monitor,
+        min_delta=min_delta,
+        patience=patience,
+        verbose=verbose,
+        mode=mode,
+        baseline=None,
+        restore_best_weights=False
+    )
+
 
 def create_model(config: dict) -> models.Model:
 
@@ -103,37 +115,23 @@ def create_model(config: dict) -> models.Model:
         pooling="max",
         input_shape=input_shape
     )
-    base_model.trainable = False
-    print(base_model.summary())
-
-    # Design the model now
-    model = models.Sequential()
-    model.add(base_model)
-    model.add(layers.Flatten())
-    model.add(layers.Dense(units=NUM_CLASSES, activation="softmax"))
-    print(model.summary())
-    return model
-
-
-def create_model2(config: dict) -> models.Model:
-
-    # Define the input shape
-    input_shape = (config["image_size"][0], config["image_size"][1], 3)
-
-    # Create the base model
-    # Note that EfficientNetB2 already includes a preprocessing layer, it receives raw images
-    base_model = EfficientNetB2(
-        weights='imagenet',  # Load weights pre-trained on ImageNet.
-        include_top=False,  # Do not include the ImageNet classifier at the top.
-        pooling="max",
-        input_shape=input_shape
-    )
+    # https://stackoverflow.com/questions/70998847/transfer-learning-fine-tuning-how-to-keep-batchnormalization-in-inference-mode
     base_model.trainable = False
 
     # Design the model with Functional API so it works with Grad CAM
     x = base_model.output
     pred_layer = layers.Dense(units=NUM_CLASSES, activation="softmax", name="prediction")(x)
     model = models.Model(inputs=base_model.input, outputs=pred_layer)
+
+    # Define some base model layers to be trainable
+    fine_tune_layers_num = config["base_model_layers_to_fine_tune"]
+    if fine_tune_layers_num > 0:
+        total_num_layers = len(model.layers)
+        # Start from -2 because the dense layer is trainable already
+        for i in range(total_num_layers-2, total_num_layers-fine_tune_layers_num-2, -1):
+            layer_i = model.get_layer(index=i)
+            layer_i.trainable = True
+
     print(model.summary())
     return model
 

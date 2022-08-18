@@ -9,12 +9,13 @@ if __name__ == "__main__":
 
     # To train a model with a specific dataset
     config_train = {
-        "model_name": "02_Aug_RandomCrop",
-        "dataset": "data_100",
+        "model_name": "test",
+        "dataset": "data_001",
         "is_new_experiment": True,
         "image_size": (480, 640),  # height x width
         "batch_size": 16,
-        "epochs": 35
+        "epochs": 5,
+        "base_model_layers_to_fine_tune": 5
     }
     config_augmentation = {
         #"HorizontalFlip": {"p":0.5}
