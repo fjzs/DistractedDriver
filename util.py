@@ -25,7 +25,6 @@ def shuffle_2D_array(input: np.ndarray) -> None:
     np.random.shuffle(input)
 
 
-
 def load_csv_logs(folder_path: str) -> pd.DataFrame:
     return pd.read_csv(os.path.join(folder_path, "logs.csv"))
 
@@ -99,4 +98,4 @@ def plot_and_save_logs(folder_path: str) -> None:
 
 
 if __name__ == "__main__":
-    plot_and_save_logs("experiments\\test1_data_001")
+    pass

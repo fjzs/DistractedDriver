@@ -9,17 +9,19 @@ if __name__ == "__main__":
 
     # To train a model with a specific dataset
     config_train = {
-        "model_name": "test",
-        "dataset": "data_001",
-        "is_new_experiment": False,
+        "model_name": "02_Aug_RandomCrop",
+        "dataset": "data_100",
+        "is_new_experiment": True,
         "image_size": (480, 640),  # height x width
-        "batch_size": 10,
-        "epochs": 50
+        "batch_size": 16,
+        "epochs": 35
     }
     config_augmentation = {
         #"HorizontalFlip": {"p":0.5}
+        "RandomCrop": {"height": 380, "width": 540, "p":0.5},
+        "Resize": {"height": 480, "width": 640}
     }
-    #train.train_experiment(config_train, config_augmentation)
+    train.train_experiment(config_train, config_augmentation)
 
     print("\nEvaluating experiment...")
     evaluate_and_report(config_train)

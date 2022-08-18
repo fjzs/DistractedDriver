@@ -28,6 +28,7 @@ def train_experiment(config_train: dict, config_augmentation: dict) -> None:
     # Assemble the train and val dataset
     train_dataset = dataset_loader.load_dataset_split("train", config_train, True)
     train_dataset = add_augmentations(train_dataset, config_augmentation)
+    #util.visualize_dataset(train_dataset)
     val_dataset = dataset_loader.load_dataset_split("val", config_train, True)
 
     # Callbacks
@@ -81,11 +82,11 @@ def get_callback_CSVLogger(folder_path: str) -> CSVLogger:
 def get_callback_ModelCheckpoint(folder_path: str) -> ModelCheckpoint:
     return ModelCheckpoint(
         filepath=os.path.join(folder_path, "best.hdf5"),
-        monitor="val_loss",
+        monitor="val_accuracy",
         verbose=1,
         save_best_only=True,
         save_weights_only=False,
-        mode="min"
+        mode="max"
     )
 
 

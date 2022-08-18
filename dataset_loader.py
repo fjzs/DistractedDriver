@@ -17,6 +17,8 @@ def load_dataset_split(split:str, config:dict, shuffle: bool) -> tf.data.Dataset
     if split not in ["train", "val"]:
         raise ValueError(f"split parameter must be train or val, it is: {split}")
 
+    batch_size = config["batch_size"] if split == "train" else 1
+
     dataset_dir = util.config_get_dataset_dir(config)
     dataset_dir_split = os.path.join(dataset_dir, split)
     dataset = image_dataset_from_directory(
@@ -24,14 +26,14 @@ def load_dataset_split(split:str, config:dict, shuffle: bool) -> tf.data.Dataset
         labels="inferred",  # labels are generated from the directory structure
         label_mode="int",  # means that the labels are encoded as integers
         color_mode="rgb",
-        batch_size=1,  # do not add batch size yet
+        batch_size=batch_size,
         image_size=config["image_size"],
         shuffle=shuffle,
         seed=1989
     )
     dataset.prefetch(tf.data.AUTOTUNE)
     if shuffle:
-        dataset.shuffle(buffer_size=1024, seed=1989, reshuffle_each_iteration=True)
+        dataset = dataset.shuffle(buffer_size=128, seed=1989, reshuffle_each_iteration=True)
 
     return dataset
 

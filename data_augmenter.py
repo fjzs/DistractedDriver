@@ -57,8 +57,8 @@ def augment_images(inputs, labels, augmentation_pipeline: A.Compose):
 
     def apply_augmentation(images):
         augmented_images = []
-        for img in images:  # apply augmentation pipeline to single image (not to the batch)
-            aug_data = augmentation_pipeline(image=img.astype('uint8'))
+        for i in range(images.shape[0]):  # apply augmentation pipeline to single image (not to the batch)
+            aug_data = augmentation_pipeline(image=images[i].astype('uint8'))
             augmented_images.append(aug_data['image'])
         return np.stack(augmented_images)
 
@@ -70,15 +70,6 @@ def set_shapes(img, label, img_shape=(480,640,3)):
     img.set_shape(img_shape)
     label.set_shape([])
     return img, label
-
-
-
-
-
-
-
-
-
 
 
 
