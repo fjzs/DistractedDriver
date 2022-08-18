@@ -90,7 +90,8 @@ def get_callback_ModelCheckpoint(folder_path: str) -> ModelCheckpoint:
         mode="max"
     )
 
-def get_callback_EarlyStopping(monitor= "val_accuracy", min_delta = 0.01, patience = 10, verbose = 1, mode = "max") -> EarlyStopping:
+
+def get_callback_EarlyStopping(monitor= "val_accuracy", min_delta=0.001, patience=10, verbose=1, mode="max") -> EarlyStopping:
     return EarlyStopping(
         monitor=monitor,
         min_delta=min_delta,

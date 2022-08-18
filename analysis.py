@@ -25,7 +25,7 @@ def evaluate_and_report(config: dict) -> None:
     # Get the model and dataset
     experiment_folder = util.config_get_experiment_dir(config)
     model = keras.models.load_model(os.path.join(experiment_folder,"best.hdf5"))
-    dataset = load_dataset_split("val", config, shuffle=False)
+    dataset = load_dataset_split("val", config, shuffle=False, prefetch=False)
 
     # In the analysis we are interested in identifying the filenames associated with the images
     # This array will correspond to the other arrays only if the dataset is not shuffled

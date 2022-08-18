@@ -5,12 +5,13 @@ from keras.utils import image_dataset_from_directory
 # Source: https://towardsdatascience.com/what-is-the-best-input-pipeline-to-train-image-classification-models-with-tf-keras-eb3fe26d3cc5
 
 
-def load_dataset_split(split:str, config:dict, shuffle: bool) -> tf.data.Dataset:
+def load_dataset_split(split:str, config:dict, shuffle: bool, prefetch:bool=True) -> tf.data.Dataset:
     """
     loads a specific split of the data from a given directory
     :param split: "train" or "val"
     :param config: configuration parameters
-    :param shuffle: Use True when training, False for error analysis
+    :param shuffle: Use True when training, False for analysis
+    :param prefetch: Use True when training, False for analysis
     :return: tf.data.Dataset
     """
 
@@ -30,7 +31,10 @@ def load_dataset_split(split:str, config:dict, shuffle: bool) -> tf.data.Dataset
         shuffle=shuffle,
         seed=1989
     )
-    dataset = dataset.prefetch(tf.data.AUTOTUNE)
+
+    if prefetch:
+        dataset = dataset.prefetch(tf.data.AUTOTUNE)
+
     if shuffle:
         dataset = dataset.shuffle(buffer_size=128, seed=1989, reshuffle_each_iteration=True)
 

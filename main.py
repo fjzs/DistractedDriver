@@ -9,20 +9,20 @@ if __name__ == "__main__":
 
     # To train a model with a specific dataset
     config_train = {
-        "model_name": "test",
-        "dataset": "data_001",
-        "is_new_experiment": True,
+        "model_name": "01_fineTune5",
+        "dataset": "data_010",
+        "is_new_experiment": False,
         "image_size": (480, 640),  # height x width
         "batch_size": 16,
-        "epochs": 5,
+        "epochs": 100,
         "base_model_layers_to_fine_tune": 5
     }
     config_augmentation = {
         #"HorizontalFlip": {"p":0.5}
-        "RandomCrop": {"height": 380, "width": 540, "p":0.5},
-        "Resize": {"height": 480, "width": 640}
+        #"RandomCrop": {"height": 380, "width": 540, "p":0.5},
+        #"Resize": {"height": 480, "width": 640}
     }
-    train.train_experiment(config_train, config_augmentation)
+    #train.train_experiment(config_train, config_augmentation)
 
     print("\nEvaluating experiment...")
     evaluate_and_report(config_train)
