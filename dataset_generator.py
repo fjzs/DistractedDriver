@@ -1,7 +1,8 @@
+from CONSTANTS import DIR_DATA, DIR_ORIGINAL_TRAINVAL, FILEPATH_DRIVER_FILE_SPLIT
 import os
-import util
-from CONSTANTS import DIR_DATA, DIR_ORIGINAL_TRAINVAL
+import pandas as pd
 import shutil
+import util
 
 
 def generate_from_original_labels(total_fraction:float, val_fraction: float) -> None:
@@ -64,5 +65,73 @@ def generate_from_original_labels(total_fraction:float, val_fraction: float) -> 
         print(f"\t# train images: {len(files) - num_val_files}")
 
 
+def generate_from_csv(fraction:float) -> None:
+    if not (0 < fraction <= 1):
+        raise ValueError("total_fraction parameter incorrect")
 
+    # Create the new data_xxx fraction folder within data if non existant
+    folder_name = "data_noleak_" + str(int(fraction * 100)).zfill(3)
+    folder_path = os.path.join(DIR_DATA, folder_name)
+    folder_path_train = os.path.join(folder_path, "train")
+    folder_path_val = os.path.join(folder_path, "val")
+    if not os.path.isdir(folder_path):
+        os.mkdir(folder_path)
+    if not os.path.isdir(folder_path_train):
+        os.mkdir(folder_path_train)
+    if not os.path.isdir(folder_path_val):
+        os.mkdir(folder_path_val)
 
+    # Read the .csv file where the split of each file is indicated
+    # Sample rows:
+    # subject_id	img_file	    split
+    # p002	        img_100057.jpg	val
+    # p002	        img_100116.jpg	val
+    df = pd.read_csv(FILEPATH_DRIVER_FILE_SPLIT, sep=";")
+
+    # Select the rows from the dataframe sample a fraction
+    df_train_class = df.loc[df['split'] == "train"]
+    df_val_class = df.loc[df['split'] == "val"]
+    df_train_class_sample = df_train_class.sample(frac=fraction, random_state=1989).reset_index()
+    df_val_class_sample = df_val_class.sample(frac=fraction, random_state=1989).reset_index()
+    df_train_val_sample = pd.concat([df_train_class_sample, df_val_class_sample])
+
+    # Read the classes names c0, c1, ..., c9
+    classes_names = [str(f.path).split("\\")[-1] for f in os.scandir(DIR_ORIGINAL_TRAINVAL) if f.is_dir()]
+    for class_name in classes_names:
+        class_code = class_name[0:2]
+        print(f"Class: {class_name} and code: {class_code}")
+        # Check if dir is needed to be created at destination:
+        folder_path_train_class_name = os.path.join(folder_path_train, class_code)
+        folder_path_val_class_name = os.path.join(folder_path_val, class_code)
+        if not os.path.isdir(folder_path_train_class_name):
+            os.mkdir(folder_path_train_class_name)
+        if not os.path.isdir(folder_path_val_class_name):
+            os.mkdir(folder_path_val_class_name)
+
+        # Read the files from the class folder
+        subdir = os.path.join(DIR_ORIGINAL_TRAINVAL, class_name)
+        class_files = [f for f in os.listdir(subdir) if f.endswith("jpg")]  # relative path
+
+        # Copy the files from the original location to the destination location
+        train_num = 0
+        val_num = 0
+        for f in class_files:
+            split = df_train_val_sample.loc[df_train_val_sample['img_file'] == f]["split"]
+            if split.empty:
+                continue
+            else:
+                split = str(split.values[0])
+            filepath_origin = os.path.join(subdir, f)
+            filepath_destination = None
+            if split == "train":
+                filepath_destination = os.path.join(folder_path_train_class_name, f)
+                train_num += 1
+            elif split == "val":
+                filepath_destination = os.path.join(folder_path_val_class_name, f)
+                val_num += 1
+            else:
+                raise ValueError("split not recognized")
+            shutil.copy(filepath_origin, filepath_destination)
+
+        print(f"\tTrain images: {train_num}")
+        print(f"\tVal images: {val_num}")

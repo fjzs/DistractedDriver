@@ -21,6 +21,7 @@ def evaluate_and_report(config: dict) -> None:
     :param config: the configuration file of the experiment, specifies the necessary details to proceed
     :return:
     """
+    print("\nEvaluating experiment...")
 
     # Get the model and dataset
     experiment_folder = util.config_get_experiment_dir(config)

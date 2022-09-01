@@ -11,7 +11,8 @@ CLASSES = {0:"Safe driving",
            }
 NUM_CLASSES = len(CLASSES)
 
-DIR_ORIGINAL_TRAINVAL = "C:\\Users\\Acer\\Documents\\Datasets\\distracted-driver-detection\\train"
-DIR_ORIGINAL_TEST = "C:\\Users\\Acer\\Documents\\Datasets\\distracted-driver-detection\\train"
+DIR_ORIGINAL_TRAINVAL = "C:\\Users\\Acer\\Documents\\Datasets\\distracted-driver-detection\\train_fixed"
+DIR_ORIGINAL_TEST = "C:\\Users\\Acer\\Documents\\Datasets\\distracted-driver-detection\\test"
 DIR_DATA = "data"
 DIR_EXPERIMENTS = "experiments"
+FILEPATH_DRIVER_FILE_SPLIT = "C:\\Users\\Acer\\Documents\\Datasets\\distracted-driver-detection\\driver_imgs_list_split.csv"
