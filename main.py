@@ -10,7 +10,7 @@ if __name__ == "__main__":
     # To train a model with a specific dataset
     config_train = {
         "model_name": "01_fineTune5",
-        "dataset": "data_noleak_100",
+        "dataset": "data_noleak_010",
         "is_new_experiment": False,
         "image_size": (480, 640),  # height x width
         "batch_size": 16,
@@ -22,7 +22,7 @@ if __name__ == "__main__":
         #"RandomCrop": {"height": 380, "width": 540, "p":0.5},
         #"Resize": {"height": 480, "width": 640}
     }
-    train.train_experiment(config_train, config_augmentation)
+    #train.train_experiment(config_train, config_augmentation)
     evaluate_and_report(config_train)
 
     # TODO: add type checking with Pytype (https://theaisummer.com/best-practices-deep-learning-code/)

@@ -68,7 +68,7 @@ def evaluate_and_report(config: dict) -> None:
                          experiment_folder,
                          image_files,
                          original_index_considered,
-                         topK=5)
+                         topK=3)
 
 
 def print_report_with_table(aggregation_list: list, exp_folder_path: str, report_name: str, topK: int = 10) -> None:
@@ -292,8 +292,8 @@ def create_visual_report_single_page(model: keras.Model, ranking: int, gt_index:
         values.append(str(key) + "_" + value)
     x_axis = np.linspace(0, 1.0, 5, endpoint=True)
 
-    # Create the subplots
-    for i in range(0, final_size, 3):
+    # Create the row of subplots for each example
+    for i in range(final_size):
         index = joint_index_gt_pred[i, 0]
         image_i = images[index]
         probabilities_i = probabilities[index]
@@ -301,7 +301,7 @@ def create_visual_report_single_page(model: keras.Model, ranking: int, gt_index:
         image_filename = image_files[original_image_index]
 
         # Original image
-        ax = fig.add_subplot(final_size, 3, i + 1)
+        ax = fig.add_subplot(final_size, 3, 3*i + 1)
         ax.imshow(image_i.astype("uint8"))
         ax.set_axis_off()
         ax.set_title(f"Filename: {image_filename}", fontsize=9)
@@ -309,14 +309,14 @@ def create_visual_report_single_page(model: keras.Model, ranking: int, gt_index:
         # Grad Cam
         data = ([image_i], None)
         grid = explainer.explain(data, model, class_index=pred_index, image_weight=0.2)
-        ax = fig.add_subplot(final_size, 3, i + 2)
+        ax = fig.add_subplot(final_size, 3, 3*i + 2)
         ax.imshow(grid.astype("uint8"))
         ax.set_axis_off()
         ax.set_title("Grad CAM", fontsize=9)
 
         # Probabilities
         x = CLASSES.values()
-        ax = fig.add_subplot(final_size, 3, i + 3)
+        ax = fig.add_subplot(final_size, 3, 3*i + 3)
         barlist = ax.barh(y=classes_indices, width=probabilities_i)
         barlist[gt_index].set_color("green")  # This is the ground truth set to green
         ax.set_yticks(classes_indices, labels=values, fontsize=7)
