@@ -4,6 +4,7 @@ import tensorflow as tf
 from functools import partial
 import matplotlib.pyplot as plt
 import CONSTANTS
+import util
 # Source: https://github.com/albumentations-team/albumentations_examples/blob/master/notebooks/tensorflow-example.ipynb
 # Source: https://github.com/albumentations-team/albumentations/issues/905
 
@@ -31,15 +32,20 @@ def create_ComposeObject(config_augmentation: dict) -> A.Compose:
     """
     transforms = []
     for transform, params in config_augmentation.items():
-        if transform == "RandomCrop":
-            transforms.append(A.RandomCrop(height=params["height"],
-                                           width=params["width"],
-                                           p=params["p"]))
-        elif transform == "Resize":
-            transforms.append(A.Resize(height=params["height"],
-                                       width=params["width"]))
+        if transform == "Blur":
+            transforms.append(A.Blur(p=params["p"]))
+        elif transform == "Cutout":
+            transforms.append(A.Cutout(p=params["p"]))
         elif transform == "HorizontalFlip":
             transforms.append(A.HorizontalFlip(p=params["p"]))
+        elif transform == "RandomBrightnessContrast":
+            transforms.append(A.RandomBrightnessContrast(p=params["p"]))
+        elif transform == "RandomCrop":
+            transforms.append(A.RandomCrop(height=params["height"], width=params["width"], p=params["p"]))
+        elif transform == "Resize":
+            transforms.append(A.Resize(height=params["height"], width=params["width"]))
+        elif transform == "Rotate":
+            transforms.append(A.Rotate(limit=params["limit"], p=params["p"]))
         else:
             raise ValueError(f"transform {transform} not implemented")
 
@@ -72,26 +78,9 @@ def set_shapes(img, label, img_shape=(480,640,3)):
     return img, label
 
 
-
-def unit_test_map(dataset: tf.data.Dataset):
-    dataset_augmented = dataset.map(augment_images)
-    #dataset_augmented = dataset_augmented.map(set_shapes)
-    images, labels = next(iter(dataset_augmented))  # extract 1 batch from the dataset
-
-    plt.figure(figsize=(6.4*2, 4.8*3))
-    num = 9
-    for i in range(num):
-        ax = plt.subplot(3, 3, i+1)
-        img = images[i].numpy().astype("uint8")
-        ax.imshow(img)
-        label_index = int(labels[i])
-        label = CONSTANTS.CLASSES[label_index]
-        ax.set_title(label, {"fontsize":9})
-    plt.show()
-
-
-def unit_test(dataset: tf.data.Dataset):
+def unit_test(dataset: tf.data.Dataset, config_augmentation: dict):
     images, labels = next(iter(dataset))  # extract 1 batch from the dataset
+    augmentation_pipeline = create_ComposeObject(config_augmentation)
     plt.figure(figsize=(3, 6))
     num = 4
     for i in range(num):
@@ -108,8 +97,9 @@ def unit_test(dataset: tf.data.Dataset):
         ax = plt.subplot(num, 2, idx2)
         img_i = images[i]
         label_i = labels[i]
-        aug_img, aug_label = augment_images(img_i, label_i, 480, 640)
+        aug_img, aug_label = augment_images(img_i, label_i, augmentation_pipeline)
         t_img = aug_img.numpy().astype("uint8")
         ax.imshow(t_img)
         plt.title(f"Processed", fontsize=9)
     plt.show()
+

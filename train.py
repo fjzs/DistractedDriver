@@ -1,8 +1,8 @@
-import data_augmenter
 from CONSTANTS import DIR_EXPERIMENTS, NUM_CLASSES
 from data_augmenter import add_augmentations
 import dataset_loader
-from keras.applications import EfficientNetB2
+import keras
+from keras.applications import EfficientNetB2, ResNet50
 from keras import models, layers, optimizers
 from tensorflow.keras.callbacks import CSVLogger, ModelCheckpoint, EarlyStopping
 import tensorflow as tf
@@ -109,37 +109,57 @@ def create_model(config: dict) -> models.Model:
     input_shape = (config["image_size"][0], config["image_size"][1], 3)
 
     # Create the base model
-    # Note that EfficientNetB2 already includes a preprocessing layer, it receives raw images
-    base_model = EfficientNetB2(
-        weights='imagenet',  # Load weights pre-trained on ImageNet.
-        include_top=False,  # Do not include the ImageNet classifier at the top.
-        pooling="max",
-        input_shape=input_shape
-    )
-    # https://stackoverflow.com/questions/70998847/transfer-learning-fine-tuning-how-to-keep-batchnormalization-in-inference-mode
-    base_model.trainable = False
+    base_model = create_base_model(config["model_type"], input_shape, config["base_model_last_layers_to_fine_tune"])
 
+    # https://stackoverflow.com/questions/70998847/transfer-learning-fine-tuning-how-to-keep-batchnormalization-in-inference-mode
     # Design the model with Functional API so it works with Grad CAM
     x = base_model.output
     pred_layer = layers.Dense(units=NUM_CLASSES, activation="softmax", name="prediction")(x)
     model = models.Model(inputs=base_model.input, outputs=pred_layer)
-
-    # Define some base model layers to be trainable
-    fine_tune_layers_num = config["base_model_layers_to_fine_tune"]
-    if fine_tune_layers_num > 0:
-        total_num_layers = len(model.layers)
-        # Start from -2 because the dense layer is trainable already
-        for i in range(total_num_layers-2, total_num_layers-fine_tune_layers_num-2, -1):
-            layer_i = model.get_layer(index=i)
-            layer_i.trainable = True
-
-    print(model.summary())
+    print(model.summary(expand_nested=True, show_trainable=True))
     return model
 
 
-if __name__ == "__main__":
-    pass
+def create_base_model(model_type: str, input_shape, base_model_last_layers_to_fine_tune: int) -> keras.Model:
+    base_model = None
+    if model_type == "EfficientNetB2":
+        base_model = EfficientNetB2(
+            # Note that EfficientNetB2 already includes a preprocessing layer, it receives raw images
+            weights='imagenet',  # Load weights pre-trained on ImageNet.
+            include_top=False,  # Do not include the ImageNet classifier at the top.
+            pooling="max",
+            input_shape=input_shape
+        )
+        # Freeze the first layers
+        base_model.trainable = True
+        total_num_layers = len(base_model.layers)
+        for i in range(0, total_num_layers - 1 - base_model_last_layers_to_fine_tune):
+            layer_i = base_model.get_layer(index=i)
+            layer_i.trainable = False
 
+    elif model_type == "ResNet50":  # ResNet50 requires a preprocessing layer initially
+        base_model0 = ResNet50(
+            weights='imagenet',  # Load weights pre-trained on ImageNet.
+            include_top=False,  # Do not include the ImageNet classifier at the top.
+            pooling="max",
+            input_shape=input_shape
+        )
+        # Freeze the first layers
+        base_model0.trainable = True
+        total_num_layers = len(base_model0.layers)
+        for i in range(0, total_num_layers - 1 - base_model_last_layers_to_fine_tune):
+            layer_i = base_model0.get_layer(index=i)
+            layer_i.trainable = False
+
+        # Append the preprocessing layer
+        inputs = keras.Input(shape=input_shape)
+        x = layers.Lambda(keras.applications.resnet.preprocess_input, input_shape=input_shape, name="imagenet_preprocess")(inputs)
+        model_with_preprocess = base_model0(x)
+        base_model = models.Model(inputs=inputs, outputs=model_with_preprocess)
+    else:
+        raise ValueError(f"Model type {model_type} not implemented")
+
+    return base_model
 
 
 

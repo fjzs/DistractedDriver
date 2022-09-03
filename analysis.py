@@ -68,7 +68,7 @@ def evaluate_and_report(config: dict) -> None:
                          experiment_folder,
                          image_files,
                          original_index_considered,
-                         topK=3)
+                         topK=10)
 
 
 def print_report_with_table(aggregation_list: list, exp_folder_path: str, report_name: str, topK: int = 10) -> None:

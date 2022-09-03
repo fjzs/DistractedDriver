@@ -39,16 +39,17 @@ def update_csv_logs(df_initial: pd.DataFrame, folder_path: str) -> None:
 
 
 def visualize_dataset(dataset: tf.data.Dataset) -> None:
-    images, labels = next(iter(dataset))  # extract 1 batch from the dataset
-    images = images.numpy()
-    labels = labels.numpy()
-    amount = min(10, len(labels))
-    plt.figure(figsize=(25,7))
-    for i in range(amount):
-        ax = plt.subplot(2, 5, i + 1)
-        plt.imshow(images[i].astype("uint8"))
-        plt.title(f"idx={labels[i]}: {CONSTANTS.CLASSES[int(labels[i])]}")
-    plt.show()
+    for i in range(10):
+        images, labels = next(iter(dataset))  # extract 1 batch from the dataset
+        images = images.numpy()
+        labels = labels.numpy()
+        amount = min(10, len(labels))
+        plt.figure(figsize=(25,7))
+        for i in range(amount):
+            ax = plt.subplot(2, 5, i + 1)
+            plt.imshow(images[i].astype("uint8"))
+            plt.title(f"idx={labels[i]}: {CONSTANTS.CLASSES[int(labels[i])]}")
+        plt.show()
 
 
 def config_get_experiment_dir(config: dict) -> str:
