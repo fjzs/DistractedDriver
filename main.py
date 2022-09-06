@@ -9,7 +9,7 @@ if __name__ == "__main__":
     # To train a model with a specific dataset
     config_train = {
         "model_name": "02_Blur",
-        "dataset": "data_noleak_001",
+        "dataset": "data_noleak_005",
         "is_new_experiment": True,
         "image_size": (480, 640),  # height x width
         "batch_size": 32,
@@ -20,11 +20,11 @@ if __name__ == "__main__":
     }
     config_augmentation = {
         #"HorizontalFlip": {"p":0.5}
-        #"RandomCrop": {"height": 380, "width": 540, "p":0.3},  # maintain
-        #"Resize": {"height": 480, "width": 640},  # maintain
+        "RandomCrop": {"height": 380, "width": 540, "p":0.3},  # maintain
+        "Resize": {"height": 480, "width": 640},  # maintain
         #"RandomBrightnessContrast": {"p": 0.5}
         #"Cutout": {"num_holes": 10, "max_h_size": 60, "max_w_size": 60, "p": 0.3}
-        "Blur": {"blur_limit": 7, "p":1}
+        "Blur": {"blur_limit": 10, "p":0.3}
     }
     train.train_experiment(config_train, config_augmentation)
     evaluate_and_report(config_train)

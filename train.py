@@ -31,7 +31,7 @@ def train_experiment(config_train: dict, config_augmentation: dict) -> None:
     val_dataset = dataset_loader.load_dataset_split("val", config_train, True)
 
     # Activate this line to see the training examples with the augmentation pipeline
-    util.visualize_dataset(train_dataset)
+    #util.visualize_dataset(train_dataset)
 
     # Callbacks
     csv_logger = get_callback_CSVLogger(experiment_dir)
