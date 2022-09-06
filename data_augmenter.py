@@ -33,19 +33,27 @@ def create_ComposeObject(config_augmentation: dict) -> A.Compose:
     transforms = []
     for transform, params in config_augmentation.items():
         if transform == "Blur":
-            transforms.append(A.Blur(p=params["p"]))
+            transforms.append(A.Blur(blur_limit=params["blur_limit"],
+                                     p=params["p"]))
         elif transform == "Cutout":
-            transforms.append(A.Cutout(p=params["p"]))
+            transforms.append(A.Cutout(num_holes=params["num_holes"],
+                                       max_h_size=params["max_h_size"],
+                                       max_w_size=params["max_w_size"],
+                                       p=params["p"]))
         elif transform == "HorizontalFlip":
             transforms.append(A.HorizontalFlip(p=params["p"]))
         elif transform == "RandomBrightnessContrast":
             transforms.append(A.RandomBrightnessContrast(p=params["p"]))
         elif transform == "RandomCrop":
-            transforms.append(A.RandomCrop(height=params["height"], width=params["width"], p=params["p"]))
+            transforms.append(A.RandomCrop(height=params["height"],
+                                           width=params["width"],
+                                           p=params["p"]))
         elif transform == "Resize":
-            transforms.append(A.Resize(height=params["height"], width=params["width"]))
+            transforms.append(A.Resize(height=params["height"],
+                                       width=params["width"]))
         elif transform == "Rotate":
-            transforms.append(A.Rotate(limit=params["limit"], p=params["p"]))
+            transforms.append(A.Rotate(limit=params["limit"],
+                                       p=params["p"]))
         else:
             raise ValueError(f"transform {transform} not implemented")
 

@@ -28,8 +28,10 @@ def train_experiment(config_train: dict, config_augmentation: dict) -> None:
     # Assemble the train and val dataset
     train_dataset = dataset_loader.load_dataset_split("train", config_train, True)
     train_dataset = add_augmentations(train_dataset, config_augmentation)
-    #util.visualize_dataset(train_dataset)
     val_dataset = dataset_loader.load_dataset_split("val", config_train, True)
+
+    # Activate this line to see the training examples with the augmentation pipeline
+    util.visualize_dataset(train_dataset)
 
     # Callbacks
     csv_logger = get_callback_CSVLogger(experiment_dir)
@@ -114,6 +116,11 @@ def create_model(config: dict) -> models.Model:
     # https://stackoverflow.com/questions/70998847/transfer-learning-fine-tuning-how-to-keep-batchnormalization-in-inference-mode
     # Design the model with Functional API so it works with Grad CAM
     x = base_model.output
+
+    # Check if dropout is added
+    if config["dropout_p"] > 0:
+        x = layers.Dropout(config["dropout_p"])(x)
+
     pred_layer = layers.Dense(units=NUM_CLASSES, activation="softmax", name="prediction")(x)
     model = models.Model(inputs=base_model.input, outputs=pred_layer)
     print(model.summary(expand_nested=True, show_trainable=True))
