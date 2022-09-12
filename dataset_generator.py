@@ -66,6 +66,7 @@ def generate_from_original_labels(total_fraction:float, val_fraction: float) -> 
 
 
 def generate_from_csv(fraction:float) -> None:
+    # TODO: add the test split
     if not (0 < fraction <= 1):
         raise ValueError("total_fraction parameter incorrect")
 
@@ -135,3 +136,55 @@ def generate_from_csv(fraction:float) -> None:
 
         print(f"\tTrain images: {train_num}")
         print(f"\tVal images: {val_num}")
+
+
+def generate_test_from_existing_val(dataset_name) -> None:
+    """
+
+    :param dataset_name: such as "data_no_leak_100"
+    :return:
+    """
+
+    # Create the new test folder within the dataset folder
+    folder_path = os.path.join(DIR_DATA, dataset_name)
+    folder_path_val = os.path.join(folder_path, "val")
+    folder_path_test = os.path.join(folder_path, "test")
+
+    if not os.path.isdir(folder_path):
+        raise ValueError(f"folder not existent: {folder_path}")
+    if not os.path.isdir(folder_path_test):
+        os.mkdir(folder_path_test)
+
+    # Read the .csv file where the split of each file is indicated
+    # Sample rows:
+    # subject_id	img_file	    split
+    # p002	        img_100057.jpg	val
+    # p002	        img_100116.jpg	val
+    df = pd.read_csv(FILEPATH_DRIVER_FILE_SPLIT, sep=";")
+
+    # Select the rows from the dataframe sample a fraction
+    test_files = df.loc[df['split'] == "test"]["img_file"].to_list()
+
+    # Read the classes names c0, c1, ..., c9
+    classes_names = [str(f.path).split("\\")[-1] for f in os.scandir(folder_path_val) if f.is_dir()]
+    for class_name in classes_names:
+
+        print(f"Working in class: {class_name}")
+
+        # Check if dir is needed to be created at destination:
+        folder_path_test_class_name = os.path.join(folder_path_test, class_name)
+        if not os.path.isdir(folder_path_test_class_name):
+            os.mkdir(folder_path_test_class_name)
+
+        # Read the files from the val/class folder
+        folder_path_val_class = os.path.join(folder_path_val, class_name)
+        val_class_files = [f for f in os.listdir(folder_path_val_class) if f.endswith("jpg")]  # relative path
+        test_class_files = [f for f in val_class_files if f in test_files]
+
+        # Cut the files from the original val location to the destination test location
+        print(f"About to cut {len(test_class_files)} from val to test")
+        for f in test_class_files:
+            filepath_origin = os.path.join(folder_path_val_class, f)
+            filepath_destination = os.path.join(folder_path_test_class_name, f)
+            shutil.copy(filepath_origin, filepath_destination)
+            os.remove(filepath_origin)
