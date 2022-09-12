@@ -188,3 +188,54 @@ def generate_test_from_existing_val(dataset_name) -> None:
             filepath_destination = os.path.join(folder_path_test_class_name, f)
             shutil.copy(filepath_origin, filepath_destination)
             os.remove(filepath_origin)
+
+
+def sample_from_existing_dataset(fraction_train: float, fraction_val: float, fraction_test: float) -> None:
+    """
+
+    :param fraction_train:
+    :param fraction_val:
+    :param fraction_test:
+    :return:
+    """
+
+    # Create the new dataset folder
+    source_folder_path = os.path.join(DIR_DATA, "data_noleak_100")
+    destination_folder_name = "data_noleak_" + str(int(fraction_train * 100)).zfill(3)
+    destination_folder_path = os.path.join(DIR_DATA, destination_folder_name)
+    if not os.path.isdir(destination_folder_path):
+        os.mkdir(destination_folder_path)
+
+    splits = ["train", "val", "test"]
+    frac_per_split = {"train": fraction_train, "val": fraction_val, "test": fraction_test}
+    classes = ["c0","c1","c2","c3","c4","c5","c6","c7","c8","c9"]
+    if not os.path.isdir(source_folder_path):
+        raise ValueError(f"folder not existent: {source_folder_path}")
+
+    for split in splits:
+        print(f"Working in split: {split}")
+        fraction = frac_per_split[split]
+        source_folder_split_path = os.path.join(source_folder_path, split)
+        destination_folder_split_path = os.path.join(destination_folder_path, split)
+        if not os.path.isdir(destination_folder_split_path):
+            os.mkdir(destination_folder_split_path)
+
+        for class_name in classes:
+            print(f"\tWorking in class: {class_name}")
+            source_folder_split_class_path = os.path.join(source_folder_split_path, class_name)
+            destination_folder_split_class_path = os.path.join(destination_folder_split_path, class_name)
+            if not os.path.isdir(destination_folder_split_class_path):
+                os.mkdir(destination_folder_split_class_path)
+
+            files = [f for f in os.listdir(source_folder_split_class_path) if f.endswith("jpg")]  # relative path
+            util.shuffle_list(files)
+            sample_size = int(fraction*len(files))
+            files = files[0:sample_size]
+
+            # Now copy these files to the destination folder
+            for f in files:
+                filepath_origin = os.path.join(source_folder_split_class_path, f)
+                filepath_destination = os.path.join(destination_folder_split_class_path, f)
+                shutil.copy(filepath_origin, filepath_destination)
+
+
