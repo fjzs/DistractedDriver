@@ -10,7 +10,10 @@ State Farm hopes to improve these alarming statistics, and better insure their c
 Source: https://www.kaggle.com/c/state-farm-distracted-driver-detection
 
 
-# Step 1: create the environment
+# Project presentation
 ```
-conda create --name distracted_driver python=3.9
+Link here
 ```
+
+# Label Book
+
