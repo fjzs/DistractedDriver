@@ -15,8 +15,8 @@ def load_dataset_split(split:str, config:dict, shuffle: bool, prefetch:bool=True
     :return: tf.data.Dataset
     """
 
-    if split not in ["train", "val"]:
-        raise ValueError(f"split parameter must be train or val, it is: {split}")
+    if split not in ["train", "val", "test"]:
+        raise ValueError(f"split parameter not recognized, it is: {split}")
 
     batch_size = config["batch_size"] if split == "train" else 1
     dataset_dir = util.config_get_dataset_dir(config)
@@ -29,14 +29,14 @@ def load_dataset_split(split:str, config:dict, shuffle: bool, prefetch:bool=True
         batch_size=batch_size,
         image_size=config["image_size"],
         shuffle=shuffle,
-        seed=1989
+        seed=util.SEED
     )
 
     if prefetch:
         dataset = dataset.prefetch(tf.data.AUTOTUNE)
 
     if shuffle:
-        dataset = dataset.shuffle(buffer_size=128, seed=1989, reshuffle_each_iteration=True)
+        dataset = dataset.shuffle(buffer_size=128, seed=util.SEED, reshuffle_each_iteration=True)
 
     return dataset
 

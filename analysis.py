@@ -12,21 +12,25 @@ from tf_explain.core.grad_cam import GradCAM
 import util
 
 
-def evaluate_and_report(config: dict) -> None:
+def evaluate_and_report(config: dict, split:str = "train") -> None:
     """
-    Evaluates a model performance in the val split of a dataset and creates 3 reports:
+    Evaluates a model performance in a specific split of the dataset and show:
         - Report per class
         - Report aggregated on the classes
         - Visual report showing the top most frequent correct and incorrect predictions with Grad Cam included
     :param config: the configuration file of the experiment, specifies the necessary details to proceed
+    :param split: {train, val, test}
     :return:
     """
     print("\nEvaluating experiment...")
 
+    if split not in ["train", "val", "test"]:
+        raise ValueError(f"split not recognized: {split}")
+
     # Get the model and dataset
     experiment_folder = util.config_get_experiment_dir(config)
     model = keras.models.load_model(os.path.join(experiment_folder,"best.hdf5"))
-    dataset = load_dataset_split("val", config, shuffle=False, prefetch=False)
+    dataset = load_dataset_split(split, config, shuffle=False, prefetch=False)
 
     # In the analysis we are interested in identifying the filenames associated with the images
     # This array will correspond to the other arrays only if the dataset is not shuffled

@@ -15,7 +15,7 @@ def train_experiment(config_train: dict, config_augmentation: dict) -> None:
 
     print(f"Starting experiment with configuration:{config_train}")
     is_new_experiment = config_train["is_new_experiment"]
-    experiment_dir = util.config_get_experiment_dir(config_train)
+    experiment_dir = util.config_get_experiment_dir(config_train["model_name"], config_train["dataset"])
     if not os.path.exists(experiment_dir):
         os.mkdir(experiment_dir)
 

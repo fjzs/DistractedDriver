@@ -16,3 +16,4 @@ DIR_ORIGINAL_TEST = "C:\\Users\\Acer\\Documents\\Datasets\\distracted-driver-det
 DIR_DATA = "data"
 DIR_EXPERIMENTS = "experiments"
 FILEPATH_DRIVER_FILE_SPLIT = "C:\\Users\\Acer\\Documents\\Datasets\\distracted-driver-detection\\driver_imgs_list_split.csv"
+VIDEO_FILE = "C:\\Users\\Acer\\Documents\\Datasets\\distracted-driver-detection\\video.mp4"

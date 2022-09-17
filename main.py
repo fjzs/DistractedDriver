@@ -4,7 +4,7 @@ import train
 
 if __name__ == "__main__":
     # To generate the train/val folders
-    dataset_generator.sample_from_existing_dataset(fraction_train=0.01, fraction_val=0.01, fraction_test=0.1)
+    #dataset_generator.sample_from_existing_dataset(fraction_train=0.01, fraction_val=0.01, fraction_test=0.1)
 
     # To train a model with a specific dataset
     config_train = {
