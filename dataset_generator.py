@@ -1,4 +1,4 @@
-from CONSTANTS import DIR_DATA, DIR_ORIGINAL_TRAINVAL, FILEPATH_DRIVER_FILE_SPLIT
+import CONSTANTS
 import os
 import pandas as pd
 import shutil
@@ -20,7 +20,7 @@ def generate_from_original_labels(total_fraction:float, val_fraction: float) -> 
 
     # Create the new data_xxx fraction folder within data if non existant
     folder_name = "data_" + str(int(total_fraction*100)).zfill(3)
-    folder_path = os.path.join(DIR_DATA, folder_name)
+    folder_path = os.path.join(CONSTANTS.DIR_DATA, folder_name)
     folder_path_train = os.path.join(folder_path, "train")
     folder_path_val = os.path.join(folder_path, "val")
     if not os.path.isdir(folder_path):
@@ -31,7 +31,7 @@ def generate_from_original_labels(total_fraction:float, val_fraction: float) -> 
         os.mkdir(folder_path_val)
 
     # Read the classes names c0, c1, ..., c9
-    classes_names = [str(f.path).split("\\")[-1] for f in os.scandir(DIR_ORIGINAL_TRAINVAL) if f.is_dir()]
+    classes_names = [str(f.path).split("\\")[-1] for f in os.scandir(CONSTANTS.DIR_ORIGINAL_TRAINVAL) if f.is_dir()]
     for class_name in classes_names:
         print(f"Class: {class_name}")
 
@@ -44,7 +44,7 @@ def generate_from_original_labels(total_fraction:float, val_fraction: float) -> 
             os.mkdir(folder_path_val_class_name)
 
         # Read the files from the original location
-        subdir = os.path.join(DIR_ORIGINAL_TRAINVAL, class_name)
+        subdir = os.path.join(CONSTANTS.DIR_ORIGINAL_TRAINVAL, class_name)
         files = [f for f in os.listdir(subdir) if f.endswith("jpg")]  # relative path
         util.shuffle(files)
 
@@ -72,7 +72,7 @@ def generate_from_csv(fraction:float) -> None:
 
     # Create the new data_xxx fraction folder within data if non existant
     folder_name = "data_noleak_" + str(int(fraction * 100)).zfill(3)
-    folder_path = os.path.join(DIR_DATA, folder_name)
+    folder_path = os.path.join(CONSTANTS.DIR_DATA, folder_name)
     folder_path_train = os.path.join(folder_path, "train")
     folder_path_val = os.path.join(folder_path, "val")
     if not os.path.isdir(folder_path):
@@ -87,7 +87,7 @@ def generate_from_csv(fraction:float) -> None:
     # subject_id	img_file	    split
     # p002	        img_100057.jpg	val
     # p002	        img_100116.jpg	val
-    df = pd.read_csv(FILEPATH_DRIVER_FILE_SPLIT, sep=";")
+    df = pd.read_csv(CONSTANTS.FILEPATH_DRIVER_FILE_SPLIT, sep=";")
 
     # Select the rows from the dataframe sample a fraction
     df_train_class = df.loc[df['split'] == "train"]
@@ -97,7 +97,7 @@ def generate_from_csv(fraction:float) -> None:
     df_train_val_sample = pd.concat([df_train_class_sample, df_val_class_sample])
 
     # Read the classes names c0, c1, ..., c9
-    classes_names = [str(f.path).split("\\")[-1] for f in os.scandir(DIR_ORIGINAL_TRAINVAL) if f.is_dir()]
+    classes_names = [str(f.path).split("\\")[-1] for f in os.scandir(CONSTANTS.DIR_ORIGINAL_TRAIN) if f.is_dir()]
     for class_name in classes_names:
         class_code = class_name[0:2]
         print(f"Class: {class_name} and code: {class_code}")
@@ -110,7 +110,7 @@ def generate_from_csv(fraction:float) -> None:
             os.mkdir(folder_path_val_class_name)
 
         # Read the files from the class folder
-        subdir = os.path.join(DIR_ORIGINAL_TRAINVAL, class_name)
+        subdir = os.path.join(CONSTANTS.DIR_ORIGINAL_TRAIN, class_name)
         class_files = [f for f in os.listdir(subdir) if f.endswith("jpg")]  # relative path
 
         # Copy the files from the original location to the destination location
@@ -146,7 +146,7 @@ def generate_test_from_existing_val(dataset_name) -> None:
     """
 
     # Create the new test folder within the dataset folder
-    folder_path = os.path.join(DIR_DATA, dataset_name)
+    folder_path = os.path.join(CONSTANTS.DIR_DATA, dataset_name)
     folder_path_val = os.path.join(folder_path, "val")
     folder_path_test = os.path.join(folder_path, "test")
 
@@ -160,7 +160,7 @@ def generate_test_from_existing_val(dataset_name) -> None:
     # subject_id	img_file	    split
     # p002	        img_100057.jpg	val
     # p002	        img_100116.jpg	val
-    df = pd.read_csv(FILEPATH_DRIVER_FILE_SPLIT, sep=";")
+    df = pd.read_csv(CONSTANTS.FILEPATH_DRIVER_FILE_SPLIT, sep=";")
 
     # Select the rows from the dataframe sample a fraction
     test_files = df.loc[df['split'] == "test"]["img_file"].to_list()
@@ -200,9 +200,9 @@ def sample_from_existing_dataset(fraction_train: float, fraction_val: float, fra
     """
 
     # Create the new dataset folder
-    source_folder_path = os.path.join(DIR_DATA, "data_noleak_100")
+    source_folder_path = os.path.join(CONSTANTS.DIR_DATA, "data_noleak_100")
     destination_folder_name = "data_noleak_" + str(int(fraction_train * 100)).zfill(3)
-    destination_folder_path = os.path.join(DIR_DATA, destination_folder_name)
+    destination_folder_path = os.path.join(CONSTANTS.DIR_DATA, destination_folder_name)
     if not os.path.isdir(destination_folder_path):
         os.mkdir(destination_folder_path)
 
@@ -239,3 +239,27 @@ def sample_from_existing_dataset(fraction_train: float, fraction_val: float, fra
                 shutil.copy(filepath_origin, filepath_destination)
 
 
+def create_drivers_class_folders():
+    """
+    Reads the original .csv file from the original "train" folder and creates a folder for each driver and
+    a folder for each class inside the driver
+    :return:
+    """
+
+    # The dir where to create the new dataset
+    dir_path = os.path.dirname(os.path.realpath(CONSTANTS.FILEPATH_DRIVER_FILE_CLASS))
+
+    # Read the original csv file
+    # Columns --> [subject, classname, img_file]
+    df = pd.read_csv(CONSTANTS.FILEPATH_DRIVER_FILE_CLASS, sep=",")
+
+    # Get the unique drivers ids
+    drivers_id = df["subject"].unique()
+
+    # The files where all the original images with driver association are
+    class_files = [f for f in os.listdir(CONSTANTS.DIR_ORIGINAL_ALLFILES) if f.endswith("jpg")]  # relative path
+
+    # TODO CONTINUE
+
+if __name__ == "__main__":
+    create_drivers_class_folders()

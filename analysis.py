@@ -28,7 +28,7 @@ def evaluate_and_report(config: dict, split:str = "train") -> None:
         raise ValueError(f"split not recognized: {split}")
 
     # Get the model and dataset
-    experiment_folder = util.config_get_experiment_dir(config)
+    experiment_folder = util.config_get_experiment_dir(model_name=config["model_name"], dataset_name=config["dataset"])
     model = keras.models.load_model(os.path.join(experiment_folder,"best.hdf5"))
     dataset = load_dataset_split(split, config, shuffle=False, prefetch=False)
 
@@ -328,7 +328,6 @@ def create_visual_report_single_page(model: keras.Model, ranking: int, gt_index:
         ax.invert_yaxis()  # labels read top-to-bottom
         ax.set_xlabel('Probability', fontsize=7)
         ax.set_title("Probability prediction per class", fontsize=9)
-
 
     filename = "analysis_" + type_analysis + "_top_" + str(ranking).zfill(2)
     plt.savefig(os.path.join(save_directory, filename))

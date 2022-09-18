@@ -8,9 +8,9 @@ if __name__ == "__main__":
 
     # To train a model with a specific dataset
     config_train = {
-        "model_name": "02_finetune341_RC",
-        "dataset": "data_noleak_005",
-        "is_new_experiment": True,
+        "model_name": "01_finetune341_RC",
+        "dataset": "data_noleak_100",
+        "is_new_experiment": False,
         "image_size": (480, 640),  # height x width
         "batch_size": 2,
         "epochs": 30,
@@ -27,8 +27,8 @@ if __name__ == "__main__":
         #"Blur": {"blur_limit": 10, "p":0.3}
         #"Rotate": {"limit": 20, "p": 0.3}
     }
-    train.train_experiment(config_train, config_augmentation)
-    evaluate_and_report(config_train)
+    #train.train_experiment(config_train, config_augmentation)
+    evaluate_and_report(config_train, split="test")
 
     # TODO: add type checking with Pytype (https://theaisummer.com/best-practices-deep-learning-code/)
     # TODO: code style checker for TF: Pylint
