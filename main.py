@@ -6,11 +6,10 @@ if __name__ == "__main__":
     # To generate the train/val folders
     #dataset_generator.sample_from_existing_dataset(fraction_train=0.01, fraction_val=0.01, fraction_test=0.1)
 
-    # To train a model with a specific dataset
-    config_train = {
+    # Configuration of model
+    config_model = {
         "model_name": "01_finetune341_RC",
-        "dataset": "data_noleak_100",
-        "is_new_experiment": False,
+        "is_new": False,
         "image_size": (480, 640),  # height x width
         "batch_size": 2,
         "epochs": 30,
@@ -18,6 +17,12 @@ if __name__ == "__main__":
         "model_type": "EfficientNetB2",
         "dropout_p": 0
     }
+
+    # Configuration of data to use
+    config_data = {
+        "dataset": "data_noleak_100",
+    }
+
     config_augmentation = {
         #"HorizontalFlip": {"p":0.5}
         "RandomCrop": {"height": 380, "width": 540, "p":0.5},  # maintain
@@ -28,7 +33,7 @@ if __name__ == "__main__":
         #"Rotate": {"limit": 20, "p": 0.3}
     }
     #train.train_experiment(config_train, config_augmentation)
-    evaluate_and_report(config_train, split="test")
+    evaluate_and_report(config_model, config_data, split="test")
 
     # TODO: add type checking with Pytype (https://theaisummer.com/best-practices-deep-learning-code/)
     # TODO: code style checker for TF: Pylint
