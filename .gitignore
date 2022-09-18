@@ -3,7 +3,7 @@
 
 # Exclude these folders
 data/
-experiments/
+models/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
