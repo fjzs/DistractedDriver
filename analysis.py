@@ -189,8 +189,9 @@ def get_probabilities_and_predictions(model: keras.Model, images: np.ndarray, ba
     for b in range(batches_number):
         print(f"Processing batch {b+1}/{batches_number}")
         index_ini = b*batch_size
-        index_end = min(index_ini + batch_size, m-1)  # edge case for the last batch
-        probabilities[index_ini:index_end,:] = model.predict(x=images[index_ini:index_end])
+        index_end = min(index_ini + batch_size, m)  # edge case for the last batch
+        probabilities_batch = model.predict(x=images[index_ini:index_end])
+        probabilities[index_ini:index_end,:] = probabilities_batch
 
     # This is a (m,) vector
     predictions = np.argmax(probabilities, axis=1).astype(int)
