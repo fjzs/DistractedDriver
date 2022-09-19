@@ -12,25 +12,38 @@ from tf_explain.core.grad_cam import GradCAM
 import util
 
 
-def evaluate_and_report(config: dict, split:str = "train") -> None:
+def evaluate_and_report(config_model:dict, config_data:dict, split:str = "train") -> None:
     """
-    Evaluates a model performance in a specific split of the dataset and show:
+    Evaluates a model performance in a specific split of a dataset and show:
         - Report per class
         - Report aggregated on the classes
         - Visual report showing the top most frequent correct and incorrect predictions with Grad Cam included
-    :param config: the configuration file of the experiment, specifies the necessary details to proceed
+    :param config_model:
+    :param config_data:
     :param split: {train, val, test}
     :return:
     """
-    print("\nEvaluating experiment...")
-
     if split not in ["train", "val", "test"]:
         raise ValueError(f"split not recognized: {split}")
 
-    # Get the model and dataset
-    experiment_folder = util.config_get_experiment_dir(model_name=config["model_name"], dataset_name=config["dataset"])
-    model = keras.models.load_model(os.path.join(experiment_folder,"best.hdf5"))
-    dataset = load_dataset_split(split, config, shuffle=False, prefetch=False)
+    print("\nEvaluating experiment...")
+
+    # Define the folders to be working with
+    model_folder = util.config_get_model_dir(model_name=config_model["model_name"])
+    model_dataset_folder = os.path.join(model_folder, config_data["dataset"])
+    if not os.path.exists(model_dataset_folder):
+        os.mkdir(model_dataset_folder)
+
+    # Get the model
+    model = keras.models.load_model(os.path.join(model_folder,"best.hdf5"))
+
+    # Get the dataset
+    dataset = load_dataset_split(config_data["dataset"],
+                                 split,
+                                 config_model["image_size"],
+                                 batch_size=1,
+                                 shuffle=False,
+                                 prefetch=False)
 
     # In the analysis we are interested in identifying the filenames associated with the images
     # This array will correspond to the other arrays only if the dataset is not shuffled
@@ -44,21 +57,21 @@ def evaluate_and_report(config: dict, split:str = "train") -> None:
     # We will take a sample of the images of max_number_images, this could be less than the size of the dataset
     # So we will keep an array called "original_index_considered" to map to the filenames
     images, ground_truth, original_index_considered = extract_images_and_groundtruth(dataset,
-                                                                                     height=config["image_size"][0],
-                                                                                     width=config["image_size"][1])
+                                                                                     height=config_model["image_size"][0],
+                                                                                     width=config_model["image_size"][1])
     probabilities, predictions = get_probabilities_and_predictions(model, images)
 
     # Generate and print aggregated performance across classes
     target_names = CLASSES.values()
     clf_report = classification_report(ground_truth, predictions, target_names=target_names)
-    with open(os.path.join(experiment_folder, "classification_report.txt"), "w") as file:
+    with open(os.path.join(model_dataset_folder, "classification_report.txt"), "w") as file:
         file.write(str(clf_report))
     print(f"classification report created")
 
     # Compute most frequent mistakes and true positives
     mistake_list, tp_list = create_mistakes_and_true_positives_count(ground_truth, predictions)
-    print_report_with_table(mistake_list, experiment_folder, "mistakes", topK=10)
-    print_report_with_table(tp_list, experiment_folder, "true positives", topK=10)
+    print_report_with_table(mistake_list, model_dataset_folder, "mistakes", topK=10)
+    print_report_with_table(tp_list, model_dataset_folder, "true positives", topK=10)
     print(f"most frequent mistakes report created")
 
     # Create the visual report
@@ -69,13 +82,13 @@ def evaluate_and_report(config: dict, split:str = "train") -> None:
                          predictions,
                          probabilities,
                          model,
-                         experiment_folder,
+                         model_dataset_folder,
                          image_files,
                          original_index_considered,
                          topK=10)
 
 
-def print_report_with_table(aggregation_list: list, exp_folder_path: str, report_name: str, topK: int = 10) -> None:
+def print_report_with_table(aggregation_list: list, folder_path: str, report_name: str, topK: int = 10) -> None:
     """
     Table has headers: ["Ranking", "Ground Truth", "Prediction", "Frequency", "% in total predictions"]
     :return: None
@@ -98,7 +111,7 @@ def print_report_with_table(aggregation_list: list, exp_folder_path: str, report
                                       "Prediction",
                                       "Frequency",
                                       "% in total predictions"])
-    with open(os.path.join(exp_folder_path, report_name + ".txt"), "w") as file:
+    with open(os.path.join(folder_path, report_name + ".txt"), "w") as file:
         file.write(str(report))
 
 

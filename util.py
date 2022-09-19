@@ -48,15 +48,12 @@ def visualize_dataset(dataset: tf.data.Dataset) -> None:
         plt.show()
 
 
-def config_get_experiment_dir(model_name:str, dataset_name:str) -> str:
-    experiment_name = model_name + "_" + dataset_name
-    experiment_dir = os.path.join(CONSTANTS.DIR_EXPERIMENTS, experiment_name)
-    return experiment_dir
+def config_get_model_dir(model_name:str) -> str:
+    return os.path.join(CONSTANTS.DIR_MODELS, model_name)
 
 
-def config_get_dataset_dir(config: dict) -> str:
-    dataset_dir = os.path.join(CONSTANTS.DIR_DATA, config["dataset"])
-    return dataset_dir
+def config_get_dataset_dir(dataset_name: str) -> str:
+    return os.path.join(CONSTANTS.DIR_DATA, dataset_name)
 
 
 def plot_and_save_logs(folder_path: str) -> None:
@@ -95,6 +92,6 @@ def plot_and_save_logs(folder_path: str) -> None:
 
 
 if __name__ == "__main__":
-    passs
+    pass
 
 

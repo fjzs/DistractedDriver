@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     # Configuration of data to use
     config_data = {
-        "dataset": "data_noleak_100",
+        "dataset": "video_data",
     }
 
     config_augmentation = {

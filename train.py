@@ -1,4 +1,4 @@
-from CONSTANTS import DIR_EXPERIMENTS, NUM_CLASSES
+import CONSTANTS
 from data_augmenter import add_augmentations
 import dataset_loader
 import keras
@@ -121,7 +121,7 @@ def create_model(config: dict) -> models.Model:
     if config["dropout_p"] > 0:
         x = layers.Dropout(config["dropout_p"])(x)
 
-    pred_layer = layers.Dense(units=NUM_CLASSES, activation="softmax", name="prediction")(x)
+    pred_layer = layers.Dense(units=CONSTANTS.NUM_CLASSES, activation="softmax", name="prediction")(x)
     model = models.Model(inputs=base_model.input, outputs=pred_layer)
     print(model.summary(expand_nested=True, show_trainable=True))
     return model
