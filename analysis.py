@@ -30,9 +30,14 @@ def evaluate_and_report(config_model:dict, config_data:dict, split:str = "train"
 
     # Define the folders to be working with
     model_folder = util.config_get_model_dir(model_name=config_model["model_name"])
+    if not os.path.exists(model_folder):
+        os.mkdir(model_folder)
     model_dataset_folder = os.path.join(model_folder, config_data["dataset"])
     if not os.path.exists(model_dataset_folder):
         os.mkdir(model_dataset_folder)
+    model_dataset_split_folder = os.path.join(model_dataset_folder, split)
+    if not os.path.exists(model_dataset_split_folder):
+        os.mkdir(model_dataset_split_folder)
 
     # Get the model
     model = keras.models.load_model(os.path.join(model_folder,"best.hdf5"))
@@ -64,14 +69,14 @@ def evaluate_and_report(config_model:dict, config_data:dict, split:str = "train"
     # Generate and print aggregated performance across classes
     target_names = CLASSES.values()
     clf_report = classification_report(ground_truth, predictions, target_names=target_names)
-    with open(os.path.join(model_dataset_folder, "classification_report.txt"), "w") as file:
+    with open(os.path.join(model_dataset_split_folder, "classification_report.txt"), "w") as file:
         file.write(str(clf_report))
     print(f"classification report created")
 
     # Compute most frequent mistakes and true positives
     mistake_list, tp_list = create_mistakes_and_true_positives_count(ground_truth, predictions)
-    print_report_with_table(mistake_list, model_dataset_folder, "mistakes", topK=10)
-    print_report_with_table(tp_list, model_dataset_folder, "true positives", topK=10)
+    print_report_with_table(mistake_list, model_dataset_split_folder, "mistakes", topK=10)
+    print_report_with_table(tp_list, model_dataset_split_folder, "true positives", topK=10)
     print(f"most frequent mistakes report created")
 
     # Create the visual report
@@ -82,7 +87,7 @@ def evaluate_and_report(config_model:dict, config_data:dict, split:str = "train"
                          predictions,
                          probabilities,
                          model,
-                         model_dataset_folder,
+                         model_dataset_split_folder,
                          image_files,
                          original_index_considered,
                          topK=10)

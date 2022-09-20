@@ -8,7 +8,7 @@ if __name__ == "__main__":
 
     # Configuration of model
     config_model = {
-        "model_name": "01_finetune341_RC",
+        "model_name": "02_finetune341_RC",
         "is_new": False,
         "image_size": (480, 640),  # height x width
         "batch_size": 2,
@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     # Configuration of data to use
     config_data = {
-        "dataset": "video_data",
+        "dataset": "data_noleak_005",
     }
 
     config_augmentation = {
@@ -33,7 +33,7 @@ if __name__ == "__main__":
         #"Rotate": {"limit": 20, "p": 0.3}
     }
     #train.train_experiment(config_train, config_augmentation)
-    evaluate_and_report(config_model, config_data, split="test")
+    evaluate_and_report(config_model, config_data, split="val")
 
     # TODO: add type checking with Pytype (https://theaisummer.com/best-practices-deep-learning-code/)
     # TODO: code style checker for TF: Pylint
