@@ -13,6 +13,8 @@ Source: https://www.kaggle.com/c/state-farm-distracted-driver-detection
 # Project presentation
 Link: [Distracted driver project.pdf](https://github.com/fjzs/DistractedDriver/files/9603482/Distracted.driver.project.pdf)
 
+![image](https://user-images.githubusercontent.com/48451191/227422788-95ba3ec0-0ea6-4f89-9e2f-0d6c151b54c5.png)
+
 
 # Label Book
 Link: [Label Book v01.pdf](https://github.com/fjzs/DistractedDriver/files/9552606/Label.Book.v01.pdf)
